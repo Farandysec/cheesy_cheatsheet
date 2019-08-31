@@ -1,0 +1,129 @@
+DNS
+DNS
+
+
+Checking server names
+
+===================================================================
+host -t ns megacorpone.com
+host -t mx megacorpone.com
+===================================================================
+NMAP DNS Hostnames Lookup nmap -F --dns-server <dns server ip> <target ip range>
+
+===================================================================
+
+Brute force to discover domains
+
+
+#!/bin/bash
+ 
+for name in $(cat list.txt); do
+	host $name.domainnametocheck.com|grep "has address"|cut -d " " -f1,4
+done
+
+Zone transfer
+
+=====================================================================
+host -l domaintochec.com ns.dnsserverwhichastheinfo.com
+
+
+DNS SCAN
+======================================================================
+root@k:~/Documents/myhacks/new_oscp# nmap -p 53 --dns-server 10.11.1.220 10.11.1.0/24 > list_hostnames
+root@k:~/Documents/myhacks/new_oscp# cat list_hostnames | grep local
+Nmap scan report for pedro.thinc.local (10.11.1.7)
+Nmap scan report for phoenix.thinc.local (10.11.1.8)
+Nmap scan report for mike.thinc.local (10.11.1.10)
+
+
+DIG
+
+======================================================================
+root@KKK:~# dig @8.8.8.8 gmail.com ANY
+
+; <<>> DiG 9.11.4-P2-3-Debian <<>> @8.8.8.8 gmail.com ANY
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 45621
+;; flags: qr rd ra; QUERY: 1, ANSWER: 14, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 512
+;; QUESTION SECTION:
+;gmail.com.			IN	ANY
+
+;; ANSWER SECTION:
+gmail.com.		299	IN	A	216.58.201.37
+gmail.com.		299	IN	AAAA	2a00:1450:4009:80b::2005
+gmail.com.		21599	IN	CAA	0 issue "pki.goog"
+gmail.com.		3599	IN	MX	30 alt3.gmail-smtp-in.l.google.com.
+gmail.com.		21599	IN	NS	ns1.google.com.
+gmail.com.		3599	IN	MX	20 alt2.gmail-smtp-in.l.google.com.
+gmail.com.		59	IN	SOA	ns1.google.com. dns-admin.google.com. 220986295 900 900 1800 60
+
+=======================================================================
+ZONE TRANSFER
+
+dig axfr @10.11.1.220 
+dig axfr domain-name-here.com @nameserver
+
+
+
+
+=======================================================================
+#!/bin/bash
+
+#Check if the argument does exist
+if [ -z "$1" ]; then
+echo "Please provide a domain name"
+exit 0
+fi
+
+echo "Performing zone transfer for $1"
+
+echo "List of NS Servers"
+host -t ns $1 | cut -d " " -f4
+
+printf "\n"
+
+echo "List domains on $1 "
+
+printf "\n"
+
+for server in $(host -t ns $1 |cut -d" " -f4);do
+host -l $1 $server |grep "has address"|cut -d" " -f1
+done
+
+
+
+=======================================================================
+DNSRECON
+
+root@k:~/Documents/myhacks/new_oscp# dnsrecon -n 10.11.1.220 -r 10.11.1.0/24 -d local
+[*] Reverse Look-up of a Range
+[*] Performing Reverse Lookup from 10.11.1.0 to 10.11.1.255
+[*] 	 PTR mike.thinc.local 10.11.1.10
+[*] 	 PTR bob.thinc.local 10.11.1.13
+[*] 	 PTR bob2.thinc.local 10.11.1.14
+[*] 	 PTR barry.thinc.local 10.11.1.22
+
+
+root@k:~/Documents/myhacks/new_oscp# dnsrecon -n 10.11.1.220 -t axfr -d thinc.local --→ TRANSFER ZONE
+[*] Testing NS Servers for Zone Transfer
+[*] Checking for Zone Transfer for thinc.local name servers
+[*] Resolving SOA Record
+[+] 	 SOA master.thinc.local 10.11.1.220
+[*] Resolving NS Records
+[*] NS Servers found:
+[*] 	NS slave.thinc.local 10.11.1.221
+[*] 	NS master.thinc.local 10.11.1.220
+[*] Removing any duplicate NS server IP Addresses...
+[*]  
+[*] Trying NS server 10.11.1.221
+[+] 10.11.1.221 Has port 53 TCP Open
+[+] Zone Transfer was successful!!
+[*] 	 NS master.thinc.local 10.11.1.220
+[*] 	 NS slave.thinc.local 10.11.1.221
+
+

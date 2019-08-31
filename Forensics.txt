@@ -1,0 +1,23 @@
+FORENSICS
+
+
+
+wmic process >> process.txt
+wmic desktop >> desktop.txt
+wmic sysdriver >> sysdriver.txt
+wmic sysaccount >> sysaccount.txt
+wmic logon >> logon.txt
+netstat -rn >> route_table
+netstat -a >> sockets
+
+
+Then type eventvwr to open the windows logs.
+
+Do a memory dump
+
+Linux Forensics
+/var/logs
+netstat -rn
+netstat -a
+ps -aux
+

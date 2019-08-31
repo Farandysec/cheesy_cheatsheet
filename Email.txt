@@ -1,0 +1,8 @@
+EMAIL
+Email Phishing MIME POP3 ...
+
+
+
+sendEmail -t admin@victim.com -f attacker@victim.com -s MAILSERVERIP -u important -o message file=above.txt
+
+

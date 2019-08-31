@@ -1,0 +1,426 @@
+ACCOUNTS AND SYSTEM
+Accounts and system
+
+
+########################
+Kali Linux Standard x64 Build 2019.1
+########################
+
+Update APT
+########################
+apt-get update
+apt-get dist-upgrade
+
+
+FINISH THE METASPLOIT SETUP
+msfconsole -> if you have problems with the database.. then
+sudo /usr/bin/msfdb stop
+sudo/usr/bin/msfdb run
+
+
+
+Pure-ftp
+=================================================================
+=========================================================
+#!/bin/bash
+
+groupadd ftpgroup
+useradd -g ftpgroup -d /dev/null -s /etc ftpuser
+pure-pw useradd admin -u ftpuser -d /ftphome
+pure-pw mkdb
+cd /etc/pure-ftpd/auth/
+ln -s ../conf/PureDB 60pdb
+mkdir -p /ftphome
+chown -R ftpuser:ftpgroup /ftphome/
+/etc/init.d/pure-ftpd restart
+
+Then set the directory as anon
+chown ftp:nobody /ftphome/
+
+Amend this etc/pure-ftpd/pure-ftpd.conf
+# Disallow authenticated users - Act only as a public FTP server.
+AnonymousOnly                yes
+# Disallow anonymous connections. Only accept authenticated users.
+NoAnonymous                  no
+
+pure-ftp
+offsec
+offsec
+=====================================================================
+SETUP APACHE2
+
+apt-get install apache2
+service apache2 start 
+
+root@k:~/Documents/Sherlock# ls /var/www/html/
+code/                    index.html               index.nginx-debian.html  php-reverse-shell.php    
+root@k:~/Documents/Sherlock# ls /var/www/html/index.
+
+Test Apache Service
+
+root@k:~/Documents/myhacks/new_oscp# systemctl start apache2.service 
+root@k:~/Documents/myhacks/new_oscp# vim /var/www/html/index.html 
+=====================================================================
+
+Copy this to 
+/var/www/html/code/
+/ftphome/
+
+
+/usr/share/mimikatz/x64/mimikatz.exe
+/usr/share/mimikatz/Win32/mimikatz.exe
+/usr/share/wce/wce-universal.exe
+/usr/share/wce/wce64.exe
+/usr/share/wce/wce32.exe
+/usr/share/windows-binaries/
+/usr/share/windows-resources/binaries/nc.exe
+php remote shell from pentest monkey and tennc web shells
+
+=====================================================================
+Download ftp client -> apt-get install ftp
+
+=====================================================================
+Install xcompiler mingw-64
+apt-get install mingw
+
+
+=====================================================================
+Install htop
+Install terminator -> Set profile scrollback to 50000
+
+=====================================================================
+OPENVAS
+apt-get install openvas
+openvas-setup
+
+
+Update Signatures
+
+root@k:~/Documents/resources# openvas-feed-update 
+
+Initial Install
+
+run this command openvas-setup
+
+and take a copy of username and password!
+
+openvas
+https://127.0.0.1:9392
+
+
+=====================================================================
+VISUAL SETTINGS
+
+SET APPAREANCE MENU , THEME AND ICONS TO DARK, REPLACE WALLPAPER
+REMOVE BOTTOM PANEL
+SET TOP PANEL APPAREANCE COLOR TO DARK
+TERMINATOR THEME PREFERENCES COLOR SET TO ORANGE/BLACK
+TOOLS ON BARl TERMINAL, CHERRTREENOTE, FIREFOX, CHROME, NETWORKCONNECTIONS, FOLDERS, BURP, GEANY, ATOM, WIRESHARK, JOHNY, SPARTA,  ZENMAP, OPENVAS, ARMITAGE, MALTEGO
+SET ATOM COLOR TO SETTINGS THEME -> ONE DARK
+echo export PS1="\e[1;35m[\u@\h \W]\$ \e[m " > test
+=====================================================================
+
+Install Atom
+https://ide.atom.io/
+
+=====================================================================
+Install the wireshark profiles: 
+Better TCP, HTTPS and TLS, Wireshark_Profiles.zip
+=====================================================================
+
+Firefox
+
+INSTALL WAPPALIZER 
+INSTALL USER AGENT SWITCHER
+Proxy settings 127.0.0.1:8080 use for every protocol
+
+=====================================================================
+CHROMIUM 
+
+INSTALL
+
+apt-get install chromium
+
+By default chromium won’t launch on Kali Linux, this is due to chromium running as the root user. You can fix this by opening /etc/chromium.d/default-flags in vim and adding the following lines:
+
+# Run as root Kali
+export CHROMIUM_FLAGS="$CHROMIUM_FLAGS --password-store=detect --no-sandbox --user-data-dir"
+This disables the user-data-dir and sandboxing, disabling sandboxing will have some obvious security issues but this browser is for web application penetration testing only.
+
+Plus these rules
+
+# Do not hide any extensions in the about:extensions dialog
+export CHROMIUM_FLAGS="$CHROMIUM_FLAGS --show-component-extension-options"
+
+# Don't use the GPU blacklist (bug #802933)
+export CHROMIUM_FLAGS="$CHROMIUM_FLAGS --ignore-gpu-blacklist"
+
+# Run as root Kali
+export CHROMIUM_FLAGS="$CHROMIUM_FLAGS --password-store=detect --no-sandbox --user-data-dir"
+
+# Disable Chromium security features for web app testing
+export CHROMIUM_FLAGS="$CHROMIUM_FLAGS --disable-web-security"
+
+=====================================================================
+=====================================================================
+
+
+INSTALL GIT
+
+Tennc Webshells -> WebShells
+git clone https://github.com/Farandysec/webshell.git -→ Then copy it into /ftphome
+
+LES -> Linux Exploit Sugggester
+git clone https://github.com/Farandysec/linux-exploit-suggester.git→ Then copy it into /ftphome
+
+WES  -> Windows Exploit Sugggester
+git clone https://github.com/Farandysec/wesng.git → Then copy it into /ftphome
+
+A tool to find and exploit servers vulnerable to Shellshock:
+git clone https://github.com/Farandysec/shocker
+
+RTFM -> Extra CheatSheet
+git clone https://github.com/Farandysec/rtfm.git
+
+Powershell empire -> Powershell Scripts
+git clone https://github.com/Farandysec/Empire
+
+Bloodhound -> AD Mapper
+git clone https://github.com/Farandysec/BloodHound.git
+
+RedGhost -> Linux Post Exploitation Framework
+apt-get install dialog -> Required to make it work
+git clone https://github.com/Farandysec/RedGhost.git
+
+NSA Leak -> Eq Group Leak for Examples
+git clone https://github.com/Farandysec/EquationGroupLeak.git
+
+Pwntools -> Exploit Dev FrameWork
+git-clone https://github.com/Farandysec/pwntools.git
+apt-get install python2.7 python-pip python-dev git libssl-dev libffi-dev build-essentia
+pip install --upgrade pip
+pip install --upgrade pwntools
+
+Sherlock (Windows Priv Esc Finder) https://github.com/rasta-mouse/Sherlock.git
+cp Sherlock.ps1 /var/www/html/
+cp Sherlock.ps1 /ftphome/
+
+Geany Themes
+git clone https://github.com/Farandysec/geany-themes.git
+
+
+=====================================================================
+=====================================================================
+
+INSTALL PYTHON LIBRARIES!!!
+===================
+python3-requests
+python3-scapy
+python3-nmap
+python3-scrapy
+python-scapy
+python-nmap
+python3-netaddr
+python-netaddr
+
+=====================================================================
+=====================================================================
+
+OTHER UTLITIES
+
+hurl - URL Encoder Decoder
+
+=========================================================
+
+Setup Maltego 
+Setup Armitage
+
+=========================================================
+
+TRAFFIC FORWARDING . AKA ROUTER MODE
+For Man in the middle attacks
+
+
+If you have 2 NICs on a Linux box, both configured with IP's you don't have to add a route from one network to another. That will be done automatically.
+Add a default gateway address on the WAN NIC. Do not do this in the configuration of the LAN NIC.
+Then enable forwarding in the kernel:
+
+echo 1 >> /proc/sys/net/ipv4/ip_forward
+
+To make it auto-set this value on boot uncomment this line in/etc/sysctl.conf
+#net.ipv4.ip_forward=1
+Then set up some rules in iptables to perform the natting and forwarding:
+# Always accept loopback traffic
+
+
+=====================================================================
+
+TOP DOCS
+
+Owasp Testing Guide
+The Wiley Web Security Handbook
+
+Hacking the art of explotation
+Willey shellcoders handbook
+
+Violent Python
+Grey hat python
+Black hat python
+
+OFFSEC Books
+OSCP
+OSCE
+OSEE
+
+
+
+LINKS
+
+
+BUG BOUNTY PROGRAMS
+----------------
+HACKERONE https://www.hackthebox.eu/
+BUG CROWD https://www.bugcrowd.com
+
+BUG BOUNTY DISCLOSAL
+-------------------------------------
+https://disclose.io/
+
+
+CTF
+----------------------
+hackthebox.eu
+
+TOP DOC
+------------------
+media.defcon.org
+https://d.tube/
+
+
+FORUMS
+----------
+https://forum.bugcrowd.com/
+https://www.reddit.com/r/netsec
+https://www.reddit.com/r/blackhat/
+https://www.reddit.com/r/hacking/
+https://security.stackexchange.com/
+https://forums.offensive-security.com/
+https://forum.hackthebox.eu/
+
+
+INSTITUTIONAL SITES
+-----------
+https://isc.sans.edu/
+https://cert.europa.eu/
+https://nvd.nist.gov/
+https://www.us-cert.gov/ncas/alerts
+
+CODE
+----------
+github.com
+
+BLOG
+-----------
+https://googleprojectzero.blogspot.com/
+https://blog.talosintelligence.com/
+https://research.checkpoint.com/
+https://nakedsecurity.sophos.com/
+https://www.wired.co.uk/topic/security
+https://blog.snort.org/
+
+SNORT
+---------------------
+https://www.snort.org/documents#AdditionalResources
+https://www.snort.org/downloads#rules
+
+REPUTATION
+---------------------
+https://www.threatcrowd.org/
+https://talosintelligence.com/reputation_center
+https://zulu.zscaler.com/
+
+HUMOUR
+------------
+https://xkcd.com/
+
+
+
+INTERNET SECURITY
+---------------------------------
+https://www.shadowserver.org/wiki/pmwiki.php
+https://www.shodan.io/
+http://www.team-cymru.com/
+
+HASH
+---------
+https://wiki.skullsecurity.org
+https://isc.sans.edu/tools/reversehash.html
+https://md5hashing.net/hash
+https://hashtoolkit.com/
+http://rainbowtables.it64.com/
+https://hashkiller.co.uk/Cracker/NTLM
+https://md5decrypt.net/en/Ntlm/
+https://crackstation.net/
+https://www.rapidtables.com/
+https://haveibeenpwned.com/Passwords
+
+
+TEXT DECODERS/ENCODERS
+-----------------------------------------------
+https://www.branah.com/ascii-converter
+https://cryptii.com/
+
+
+https://pastebin.com/
+
+STRONG PASSWORD GEN
+-----------------------------------------------
+https://my.norton.com/extspa/idsafe?path=pwd-gen
+
+SEC DB
+-------------
+https://www.shodan.io/
+https://github.com/offensive-security/exploitdb
+
+
+
+
+=====================================================================
+TOP KALI TOOLS
+
+Metasploit
+Burp Suite
+John // johny
+nmap // zenmap
+openvas
+hydra medusa hashcrack ncrack
+nc netcat
+bash sed
+python ruby
+gcc
+atom // geany // sublime
+firefox with wappalizer and agent switcher
+chromium
+terminator 
+kali-linux-web
+htop
+mc
+radare2
+nasm
+rasm2
+gdb
+wireshark
+iptables tcpdump
+snort
+rookitfindername
+python libraries
+owasp-zap
+dirb nikto
+sqlmap sqlninja
+whois nslookup host ping traceroute telnet ssh ftp snmp-walk 
+wget curl
+perl
+php
+
+=====================================================================
+

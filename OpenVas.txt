@@ -1,0 +1,22 @@
+OPENVAS
+
+Update Signatures
+
+root@k:~/Documents/resources# openvas-feed-update 
+
+
+=========================================
+
+Initial Install
+
+apt-get install openvas
+
+openvas-setup
+
+and take a copy of username and password!
+
+openvas-feed-update 
+=========================================
+
+
+

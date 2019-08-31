@@ -1,0 +1,28 @@
+WIRESHARK
+Wireshark
+
+APPLY ENABLED PROTOCOLS: IP IPV6 ETHERNET ARP TCP UDP DNS SSL TLS HTTP
+
+INSTALL AND USE PROFILES:
+
+HTTP AND TLS
+BETTER TCP
+
+
+Filters
+========================================
+
+REMOVE ARP AND STP
+(not arp) and (not stp)
+
+JUST THIS SUBNET
+ip.addr in {10.11.1.0/20}
+
+IP DEST
+ip.dst == 1.1.1.0/24
+
+Further filter
+(not arp) and (not stp) and (eth.dst != ff:ff:ff:ff:ff:ff) and((eth.src != 1c:98:ec:0d:91:cd) and (eth.dst != 01:14:c2:44:1e:cc )) and (not ip.dst == 239.255.255.250) and (not ip.dst == 224.0.0.252) and (tcp.flags.syn == 1) and (ipv6.src == FFFF:FFFF:FFFF::A1)
+
+========================================
+

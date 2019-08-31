@@ -1,0 +1,155 @@
+NMAP
+NMAP
+
+
+
+SUPERSCAN
+
+=======================================================================
+nmap -T 5-A -O -iL new_list_of_targets --script vuln -oG new_port_scan -sU -p 1-49151 > new_vuln_scan 
+        Fast    Script  OS      List_of_targets     ScriptCategory      GrepableOutput      UDP     ListOfPorts
+
+======
+NMAP help /usr/share/nmap/
+======
+
+Quick scan
+
+===================================================================
+nmap x.x.x.x
+
+Sweep scan
+
+====================================================================
+nmap -sn x.x.x.x
+
+OS Scan
+
+=====================================================================
+nmap -O x.x.x.x/32
+
+Software version scan
+
+======================================================================
+nmap -sV x.x.x.x/32
+
+
+DNS SCAN
+======================================================================
+root@k:~/Documents/myhacks/new_oscp# nmap -p 53 --dns-server 10.11.1.220 10.11.1.0/24 > list_hostnames
+root@k:~/Documents/myhacks/new_oscp# cat list_hostnames | grep local
+Nmap scan report for pedro.thinc.local (10.11.1.7)
+Nmap scan report for phoenix.thinc.local (10.11.1.8)
+Nmap scan report for mike.thinc.local (10.11.1.10)
+Nmap scan report for bob.thinc.local (10.11.1.13)
+Nmap scan report for bob2.thinc.local (10.11.1.14)
+Nmap scan report for barry.thinc.local (10.11.1.22)
+Nmap scan report for payday.thinc.local (10.11.1.24)
+Nmap scan report for ralph.thinc.local (10.11.1.31)
+
+
+Script scan
+
+=======================================================================
+nmap -A x.x.x.x/32
+
+Fast mode Top 100 ports
+
+=======================================================================
+nmap -F x.x.x.x/32
+
+IPv6 Scan
+
+=======================================================================
+nmap -6 x.x.x.x/32
+
+Output to root folder
+
+=======================================================================
+nmap -oA file_name x.x.x.x/32
+
+UDP Scan
+
+=======================================================================
+nmap x.x.x.x -sU > nmap_udp_scan
+
+Non Standard ports
+
+=======================================================================
+nmap x.x.x.x -p 1-49151 
+
+SMB Scripts
+
+=======================================================================
+ls -Rla /usr/share/nmap/ | grep smb
+nmap -v -p 139,445 --script=smb-os-discovery x.x.x.x > nmap_smb_scan
+nmap -v -p 139,445 --script=smb-vuln-ms08-067 --script-args=unsafe=1 10.11.1.1-254 > nmap_smbvuln_scan
+nmap --script "smb*" 10.11.1.5
+
+
+
+
+Vuln Scripts
+
+
+Categories
+=======================================================================
+auth broadcast brute default discovery dos exploit external fuzzer intrusive malware safe version vuln
+
+=======================================================================
+
+ls /usr/share/nmap/scripts/ | grep vuln
+Script Selection
+https://nmap.org/book/nse-usage.html#nse-script-selection
+
+Command to get help with NSE Scripts:
+nmap --script-help=ssl-heartbleed
+
+
+
+root@k:~/Documents/oscp_cert# nmap -iL list_of_netbios_hosts --script smb2-vuln-uptime
+Starting Nmap 7.70 ( https://nmap.org ) at 2019-01-12 02:12 GMT
+
+root@k:~/Documents/oscp_cert# nmap 10.11.1.8 --script vuln
+Starting Nmap 7.70 ( https://nmap.org ) at 2019-01-12 02:00 GMT
+
+ls /usr/share/nmap/scripts/http* | sort | while read line; do nmap 10.11.1.8 --script  $line;done
+
+
+
+
+The --script option takes a comma-separated list of categories, filenames, and directory names. Some simple examples of its use:
+
+nmap --script default,safe
+
+	Loads all scripts in the default and safe categories.
+nmap --script smb-os-discovery
+
+	Loads only the smb-os-discovery script. Note that the .nse extension is optional.
+nmap --script default,banner,/home/user/customscripts
+
+	Loads the script in the default category, the banner script, and all .nse files in the directory /home/user/customscripts.
+
+When referring to scripts from script.db by name, you can use a shell-style ‘*’ wildcard.
+
+nmap --script "http-*"
+
+	Loads all scripts whose name starts with http-, such as http-auth and http-open-proxy. The argument to --script had to be in quotes to protect the wildcard from the shell.
+
+More complicated script selection can be done using the and, or, and not operators to build Boolean expressions. The operators have the same precedence as in Lua: not is the highest, followed by and and then or. You can alter precedence by using parentheses. Because expressions contain space characters it is necessary to quote them.
+
+nmap --script "not intrusive"
+
+	Loads every script except for those in the intrusive category.
+nmap --script "default or safe"
+
+	This is functionally equivalent to nmap --script "default,safe". It loads all scripts that are in the default category or the safe category or both.
+nmap --script "default and safe"
+
+	Loads those scripts that are in both the default and safe categories.
+nmap --script "(default or safe or intrusive) and not http-*"
+
+	Loads scripts in the default, safe, or intrusive categories, except for those whose names start with http-.
+
+
+

@@ -1,0 +1,26 @@
+SED
+SED
+
+
+sed OPTIONS... [SCRIPT] [INPUTFILE...] 
+
+
+
+Ping on one line
+ping 10.11.1.1 | sed '/PING/!d;N;s/\n/, /'
+
+
+
+Replace ',' with 'new line'
+sed -e $'s/,/\\\n/g' testdoc
+
+Replace 'abc' with 'ABC'
+sed 's/abc/ABC/' testdoc
+
+Remove first character
+sed 's/^.' testdoc
+
+Remove last character
+sed 's/.$' testdoc
+
+

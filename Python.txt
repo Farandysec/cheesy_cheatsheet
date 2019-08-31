@@ -1,0 +1,206 @@
+PYTHON
+PYTHON
+
+
+#
+LIBRARIES
+=============================
+
+import os
+#Operating system library
+import math as mathematics
+#Obviously this is a math library but you will call it mathematics within the code...!!!!this is just a test remember!!!!!
+import sys
+#This library is for system and interpreter library
+import re
+#This library is for regular expresion
+import random
+from random import randrange
+#This library is for random selections, useful to bypass IDS detectors.... We are just importing the function randrange!!!
+import nmap
+#Library for nmap
+import  crypt
+#Library for encryption
+
+import math
+import sys
+import socket
+import nmap
+import os
+import crypt
+import re
+import time
+import struct
+import optparse
+import scapy
+import netaddr
+import IPy
+import scrapy
+
+
+#How to print something
+=============================
+print ("This is going to be print")
+
+
+Assigning variables values
+=============================
+
+script_version = 1
+x = 2
+x += 5
+script_version_detail = "1.1"
+
+#This function returns the absolute value of an integer
+abs(-5)
+
+#This is for creating a string variable
+script_name = "ass_breaker"
+
+#This prints both variables on the same line
+print (script_version_detail + " " +script_name)
+
+#the above lines are just playing with strings REMEMBER %s FOR STRING %d FOR INTEGER %f FOR FLOATS
+message = "This is a test for %s because he knows %s" %(script_name,  "too_much")
+print (message)
+
+#The above is a list of strings
+fruits = ["bananas", "oranges", "mangoes", "apples"]
+
+#and this will print the list.....
+print (fruits)
+
+#and this will replace mangoes by lemons, then will pears right after oranges, will append avocados at the end and remove bananas
+fruits[2] = "lemons"
+fruits.insert (2, "pears")
+fruits.append ("avocados")
+fruits.remove ("bananas")
+
+#enters a value by keyboard
+football_players = input("enter a name")
+
+#Above shows how transform a string into an integer
+#Use float() int() str() for their respective data types
+player_age = int(input("Give me the player age"))
+print (player_age + 5)
+
+#No comments... \t is for a TAB and \n for CARRIERRETURN
+print (""'This is a test'"")
+print("this is a \t TAB and this is \n CARRIERRETURN")
+
+#These are basic comparasion operators
+2 ==2
+2 != 1
+2 < 1
+2 > 2
+2 >= 3
+2 <= 2
+x = 4
+y = 1
+(x == 4) and (y == 1)
+(x == 6) and (y == 2)
+not (x == 4) and (y == 1)
+#
+#
+
+
+LOOP IF
+=============================
+
+if x == 1:
+    print("x equals 1")
+elif x == 2:
+    print ("x equals 2")
+elif x ==3:
+    print ("x equals 3")
+else:
+    print ("x equals something else")
+#
+#
+#
+LOOP WHILE 
+=============================
+
+count_down = 10
+
+while count_down != 0:
+    count_down -= 1
+    print (count_down)
+else:
+    print ("no yet")
+#
+
+LOOP FOR
+=============================
+
+i = 50
+for i in range (0,  100):
+    print (i)
+    if i == 50:
+        print ("it's 50 break the loop!!")
+        break
+#
+#
+continue
+# Break the loop and goes back to the place where it was
+#
+#
+#
+def f_count_down(number_to_count_down):
+    local_counter = 0
+    for number_to_count_down in range (0, 100):
+        print("counting down")
+        local_counter += 1
+        number_to_count_down =+ 1
+        print (local_counter)
+        print (number_to_count_down)
+        return (local_counter + number_to_count_down)
+#
+#
+#
+#
+random_number = random.randrange(0,  10)
+print (random_number)
+#
+#
+#
+#
+#WORKING WITH TEXT FILES
+=============================
+
+#
+open_read_text_file = open ("\home\miguel\Desktop\test", "r")
+read_first_line = open_read_text_file .readline()
+read_second_line = open_read_text_file .readline()
+read_third_line = open_read_text_file .readline()
+open_read_text_file .close()
+#
+#
+open_write_text_file = open ("\home\miguel\Desktop\test", "w")
+#
+open_append_text_file = open ("\home\miguel\Desktop\test", "a")
+open_append_text_file .append ("\n Enter something on this new line \n")
+open_append_text_file .append ("\n and another line \n")
+open_append_text_file .append ("\n and one more \n")
+open_append_text_file .append ("\n last one \n")
+open_append_text_file .close() 
+
+
+open_readwrite_text_file = open ("\home\miguel\Desktop\test", "r+")
+#
+#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

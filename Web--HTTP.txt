@@ -1,0 +1,104 @@
+HTTP
+HTTP
+
+
+===================================================================
+WGET
+
+====================================================================
+
+SCRIPTED
+wget --no-check-certificate --tries=2 http://"$LINE_list$LINE_req"
+
+GET A FILE
+wget https://wordpress.org/latest.zip
+
+SAVE A FILE WITH DIFFERENT NAME
+wget -O wordpress.zip https://wordpress.org/latest.zip
+
+GET THINGS FROM A LIST
+wget -i download.txt
+
+=====================================================================
+CURL
+
+======================================================================
+
+-X POST
+-X PUT
+-X GET
+
+-H "Content-Type: application/x-www-form-urlencoded"
+-H "Content-Type: application/json"
+
+-I Only headers
+
+Data posting
+
+form urlencoded: -d "param1=value1&param2=value2" or -d @data.txt → Url encoded
+json: -d '{"key1":"value1", "key2":"value2"}' or -d @data.json -→ JSON encoded
+
+
+
+
+root@KKK:/ftphome# curl https://google.com
+<HTML><HEAD><meta http-equiv="content-type" content="text/html;charset=utf-8">
+<TITLE>301 Moved</TITLE></HEAD><BODY>
+<H1>301 Moved</H1>
+The document has moved
+<A HREF="https://www.google.com/">here</A>.
+</BODY></HTML>
+root@KKK:/ftphome# 
+
+
+GETTING A FILE
+
+root@KKK:/ftphome# curl -o curl_save https://google.com
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+								 Dload  Upload   Total   Spent    Left  Speed
+100   220  100   220    0     0    766      0 --:--:-- --:--:-- --:--:--   766
+root@KKK:/ftphome# 
+
+
+
+GETTING THE HTTP HEADER
+
+root@KKK:/ftphome# curl -I https://google.com
+HTTP/2 301 
+location: https://www.google.com/
+content-type: text/html; charset=UTF-8
+date: Sat, 24 Nov 2018 11:52:35 GMT
+expires: Mon, 24 Dec 2018 11:52:35 GMT
+cache-control: public, max-age=2592000
+server: gws
+content-length: 220
+x-xss-protection: 1; mode=block
+x-frame-options: SAMEORIGIN
+alt-svc: quic=":443"; ma=2592000; v="44,43,39,35"
+
+root@KKK:/ftphome# 
+
+
+JSON POST
+
+curl -d '{"key1":"value1", "key2":"value2"}' -H "Content-Type: application/json" -X POST http://localhost:3000/data
+curl <URL> -H "content-type: application/json" -d "{ \"woof\": \"bark\"}"
+
+
+
+
+-i “show response” -s  “silent ” -k “unsecure” -X “Method” \ “continue”
+curl -i -s -k  -X $'POST' \
+-H $'Host: 10.11.1.223' -H $'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0' -H $'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H $'Accept-Language: en-US,en;q=0.5' \
+--data-binary $'username=admin&password=admin' \
+$'https://10.11.1.223/flatfilelogin/login.php'
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,57 @@
+TEXT_LINUX
+Text Linux
+
+
+cat setup_ftp | grep -v user → to exclude data
+
+root@KKK:/ftphome# grep -E "group|user" setup_ftp  --------> 
+groupadd ftpgroup
+useradd -g ftpgroup -d /dev/null -s /etc ftpuser
+pure-pw useradd offsec -u ftpuser -d /ftphome
+chown -R ftpuser:ftpgroup /ftphome/
+root@KKK:/ftphome# 
+
+
+For removing some lines use "grep -v"
+
+root@KKK:/ftphome# grep -E "group|user" setup_ftp | grep -v ftpgroup
+pure-pw useradd offsec -u ftpuser -d /ftphome
+root@KKK:/ftphome# 
+
+OR MATCH
+
+root@KKK:~/Documents/OSCP2# grep 'tcp\|udp\|repo' nmap_basic_scan_T4
+Nmap scan report for 10.11.1.5
+135/tcp  open  msrpc
+139/tcp  open  netbios-ssn
+445/tcp  open  microsoft-ds
+
+
+Replace ',' with 'new line'
+sed -e $'s/,/\\\n/g' testdoc
+
+Replace 'abc' with 'ABC'
+sed 's/abc/ABC/' testdoc
+
+Remove first character
+sed 's/^.' testdoc
+
+Remove last character
+sed 's/.$' testdoc
+
+
+Sort lines and remove duplicates and count lines
+
+root@KKK:~/Documents/OSCP2# grep 'repo' nmap_basic_scan_T4 | sort -u | wc -l
+45
+root@KKK:~/Documents/OSCP2# 
+
+
+
+BASE64 ENCODING
+===========================
+root@k:~/Documents/myhacks/new_oscp# base64 temp_lfi 
+Li4uLi8vLi4uLi8vLi4uLi8vLi4uLi8vLi4uLi8vLi4uLi8vZXRjL3Bhc3N3ZAo=
+root@k:~/Documents/myhacks/new_oscp# 
+
+

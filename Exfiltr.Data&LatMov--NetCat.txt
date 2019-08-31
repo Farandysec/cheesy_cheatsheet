@@ -1,0 +1,37 @@
+NETCAT
+NetCat
+
+
+
+Quick session - NOTE -n is for using IP addressing (not resolve) and -v is for verbose
+
+===================================================================
+ncat -nv x.x.x.x   
+
+Listener -l -p
+
+====================================================================
+ncat -vlp 80
+
+Redirecting files < >
+
+=====================================================================
+ncat -nv x.x.x.x 80 < originalfile.txt
+ncat -vlp 80 > destinationfile.txt
+
+Executing commands / Shell
+
+======================================================================
+ncat -vlp 80 -e cmd.exe ------> Windows option
+ncat -vlp 80 -e /bin/bash ------> Linux option
+
+SSL Encryption
+
+=======================================================================
+ncat -nv x.x.x.x 80 --ssl < originalfile.txt
+ncat -vlp 80 --ssl > destinationfile.txt 
+
+
+
+
+

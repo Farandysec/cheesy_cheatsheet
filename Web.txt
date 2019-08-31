@@ -1,0 +1,77 @@
+WEB
+WEB
+
+
+URL ENCODING 
+===================================================================
+root@k:~/Documents/myhacks/new_oscp# hURL -u %27%22/%3E%3Cscript%3Ealert(1)%3C/script%3E
+bash: syntax error near unexpected token `('
+root@k:~/Documents/myhacks/new_oscp# 
+root@k:~/Documents/myhacks/new_oscp# hURL -u %27%22/%3E%3Cscript%3Ealert
+
+Original    :: %27%22/%3E%3Cscript%3Ealert
+URL DEcoded :: '"/><script>alert
+root@k:~/Documents/myhacks/new_oscp# 
+root@k:~/Documents/myhacks/new_oscp# hURL -u %3C/script%3E
+
+Original    :: %3C/script%3E
+URL DEcoded :: </script>
+root@k:~/Documents/myhacks/new_oscp# 
+
+
+HTTP REQUEST FORMAT
+===================================================================
+
+
+NMAP SCAN FOR WEB
+===================================================================
+nmap -p 80,8080,44 -oG grepable_web 10.11.1.0/26
+cat grepable_web | grep "open" | cut -d " " -f 2 > list_of_web_targets 
+cat list_of_web_targets | while read line ; do nikto -host $line
+
+nmap- --script http 10.11.1.0/26 > scan_web_vuln
+
+NIKTO SCAN -> WEB SPIDER
+
+===================================================================
+nikto -host 10.11.1.202
+
+
+DIRB -> WEB DIRECTORY SPIDER
+
+===================================================================
+root@k:~/Documents/oscp_cert# dirb http://10.11.1.115/
+
+DIRB v2.22    
+By The Dark Raver
+
+
+START_TIME: Sat Jan 12 21:33:20 2019
+URL_BASE: http://10.11.1.115/
+WORDLIST_FILES: /usr/share/dirb/wordlists/common.txt
+
+BURP
+
+===================================================================
+Get list of URLs: go to targets, left click and select copy URLs
+
+CURL
+
+===================================================================
+root@k:~/Documents/oscp_cert# curl https://10.11.1.217 -k
+<!DOCTYPE html PUBLIC "-W3CDTD XHTML 1.0 TransitionalEN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+	<title>Elastix - Login page</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<!--<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">-->
+	<link rel="stylesheet" href="themes/elastixneo/login_styles.css">
+  </head>
+
+HYDRA
+
+===================================================================
+hydra -L userlist -P /usr/share/wordlists/fasttrack.txt http-post-form "/webmail/src/login.php:login_username=^ADMIN^&secretkey=^PASS^&js_autodetect_results=1&just_logged_in=1:login"
+
+
+

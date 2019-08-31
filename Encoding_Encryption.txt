@@ -1,0 +1,40 @@
+ENCODING ENCRYPTION
+ENCODING AND ENCRYPTION
+
+
+
+-   Decoding using Kali
+
+    -   Decode Base64 Encoded Values
+
+        `echo -n "QWxhZGRpbjpvcGVuIHNlc2FtZQ==" | base64 --decode`
+        
+        base64 -d mytextfile 
+        Email: zzzzzzzzz@gmail.com , Registration Code: 49787 | Now decode your CTP Secret Key and you are done! : \x31\xC0\x50\x68\x77\x20\x70\x24\x68\x25\x22\x24\x79\x68\x72\x77\x77\x73\x68\x20\x70\x76\x77\x68\x75\x71\x76\x77\x68\x25\x23\x76\x78\x68\x73\x77\x72\x79\x68\x76\x79\x20\x79\x68\x78\x76\x23\x79\x68\x76\x77\x77\x74\x68\x22\x25\x71\x73\x68\x79\x70\x79\x22\x68\x74\x22\x23\x73\x68\x78\x74\x22\x70\x68\x72\x24\x27\x76\x68\x76\x22\x71\x23\x68\x22\x70\x24\x73\x68\x76\x71\x71\x22\x68\x77\x72\x77\x71\x68\x73\x74\x71\x77\x68\x27\x71\x76\x22\x68\x23\x77\x24\x77\x68\x74\x20\x76\x77\x68\x73\x76\x73\x74\x68\x76\x70\x71\x22\x68\x75\x74\x76\x79\x68\x75\x79\x27\x27\x68\x79\x20\x71\x77\x68\x72\x75\x72\x79\x68\x25\x70\x77\x73\x68\x20\x77\x22\x76\x68\x20\x22\x74\x23\x54\x5E\x8B\xFE\x8B\xD7\xFC\xB9\x80\x00\x00\x00\xBB\x41\x00\x00\x00\x31\xC0\x50\xAC\x33\xC3\xAA\xE2\xFA\x54\x5E\xCCroot@k:~/Documents/myhacks/new_oscp# 
+
+    -   Decode Hexidecimal Encoded Values
+    
+root@k:~/Documents/Sherlock# echo -n "4A 42 43 44 45 46 47 4F 396472796 63637756 8656874" | xxd -r -ps
+JBCDEFGO9dryf67uhehtroot@k:~/Documents/Sherlock# 
+root@k:~/Documents/Sherlock# echo -n "396472796 63637756 8656874" | xxd -r -ps
+9dryf67uhehtroot@k:~/Documents/Sherlock# 
+
+
+
+URL ENCODING 
+===================================================================
+root@k:~/Documents/myhacks/new_oscp# hURL -u %27%22/%3E%3Cscript%3Ealert(1)%3C/script%3E
+bash: syntax error near unexpected token `('
+root@k:~/Documents/myhacks/new_oscp# 
+root@k:~/Documents/myhacks/new_oscp# hURL -u %27%22/%3E%3Cscript%3Ealert
+
+Original    :: %27%22/%3E%3Cscript%3Ealert
+URL DEcoded :: '"/><script>alert
+root@k:~/Documents/myhacks/new_oscp# 
+root@k:~/Documents/myhacks/new_oscp# hURL -u %3C/script%3E
+
+Original    :: %3C/script%3E
+URL DEcoded :: </script>
+root@k:~/Documents/myhacks/new_oscp# 
+
+

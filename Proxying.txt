@@ -1,0 +1,77 @@
+PROXYING
+Proxying
+
+
+
+
+
+Port forwarding
+
+/etc/rinetd.com ---> modify  the pair of addresses and ports ...inbound and outbound
+
+===================================================================
+
+====================================================================
+REMOTE PORT FORWADING
+One device send its 127.0.0.1:3389 to a different device on a different port:
+
+
+ w.x.y.z with rdp		    53               a.b.c.d -> listening on 3390
+------------              ------           ------------ 
+
+| REMOTE |  | FW |  | MY KALI |
+
+------------              ------           ------------
+
+On the remote
+ssh a.b.c.d -p 53 -R 3390:127.0.0.1:3389
+
+
+=====================================================================
+
+======================================================================
+
+LOCAL PORT FORWARDING
+My Kali will take everything that goes to 127.0.0.1:8080, and change it to w.x.y.z:53 which will be forwarded later on to a.b.c.d:80
+
+ local 8080		    		53               w.x.y.z -> listening on 53   	a.b.c.d >listening on port 80
+------------              ------           ------------                  	------------
+
+| MY KALI |  | FW |  | REMOTE |  | TARGET |
+
+------------              ------           ------------					 	------------
+ssh w.x.y.z -p 53 -L 8080:a.b.c.d:80
+
+
+=======================================================================
+
+=======================================================================
+SOCKS PROXY
+
+Creates a socks session with a.b.c.d on port 2222
+All the traffic to port 8080 will be sent to a.b.c.d
+Then a.b.c.d will forward the traffic to w.x.y.z
+
+ssh -D 8080 -p 2222 a.b.c.d
+telnet w.x.y.z 8080
+
+
+=======================================================================
+
+=======================================================================
+PROXY CHAINS
+
+
+
+PORT FORWARDING ON WIN
+
+==============
+netsh interface portproxy add v4tov4 listenaddress=192.168.63.31 listenport=1234 connectaddress=192.168.63.67connectport=8080
+
+
+PORT FORWARDING USING NCAT
+
+=======================================================================
+ncat -lvkp 12345 -c "ncat --ssl 192.168.0.1 443"
+
+

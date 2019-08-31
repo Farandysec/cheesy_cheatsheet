@@ -1,0 +1,51 @@
+IPTABLES
+IPTables
+
+
+
+
+
+IPTABLES
+
+===================================================================
+
+Display iptables  -> Note if no table is provided then it displays all the tables
+
+====================================================================
+iptables -L [INPUT, OUTPUT, FORWARD]
+iptables -I OUTPUT 1 -d 10.11.1.0/24 -j ACCEPT
+iptables -I OUTPUT 5 -d 0.0.0.0/0 -j DROP
+
+
+
+
+Reset iptables
+
+=====================================================================
+iptables -F [INPUT. OUTPUT, FORWARD]
+
+Reset counters
+
+======================================================================
+iptables -Z [INPUT. OUTPUT, FORWARD]
+
+Insert rules
+
+=======================================================================
+iptables -I [INPUT. OUTPUT, FORWARD] [rule#] -s [source] -d [destination] -j [DROP, ACCEPT, ]
+iptables -A INPUT -i tap0 -s 0.0.0.0/0 -j REJECT
+iptables -A INPUT -i tap0 -s 10.11.1.0/24 -j ACCEPT 
+
+
+monitor traffic
+
+=======================================================================
+Chain INPUT (policy ACCEPT 1236 packets, 189K bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+ 229K   36M ACCEPT     all  --  tap0   *       10.11.1.0/24         0.0.0.0/0           
+  125 17794 REJECT     all  --  tap0   *       0.0.0.0/0            0.0.0.0/0            reject-with icmp-port-unreachable
+root@k:~/Documents/oscp_cert# 
+
+
+
+

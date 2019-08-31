@@ -1,0 +1,65 @@
+NETWORKING
+Networking
+
+
+CHECK OPEN PORTS
+
+root@KK:~/Documents/system/tftp# netstat -antp  ----> for tcp 
+Active Internet connections (servers and established)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name    
+root@KK:~/Documents/system/tftp# 
+root@KK:~/Documents/system/tftp# netstat -anup  ----> for udp
+Active Internet connections (servers and established)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name    
+udp        0      0 0.0.0.0:68              0.0.0.0:*                           590/dhclient        
+udp        0      0 0.0.0.0:69              0.0.0.0:*                           2154/atftpd         
+root@KK:~/Documents/system/tftp# 
+
+root@k:~# netstat -anup ----> for udp
+Active Internet connections (servers and established)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name    
+udp        0      0 0.0.0.0:68              0.0.0.0:*                           37039/dhclient      
+udp        0      0 0.0.0.0:68              0.0.0.0:*                           34918/dhclient      
+udp        0      0 0.0.0.0:68              0.0.0.0:*                           24088/dhclient      
+udp6       0      0 ::1:45793               ::1:45793               ESTABLISHED 25929/postgres      
+root@k:~# 
+
+CHECK ARP TABLE
+root@k:~# arp -a
+dsldevice.lan (192.168.1.254) at d8:7d:7f:92:be:de [ether] on eth0
+? (192.168.1.8) at 00:b3:62:67:1e:88 [ether] on eth0
+root@k:~# 
+
+
+CHECK ROUTING TABLE
+root@KK:~/Documents/system/tftp# netstat -r  ---> routing table
+Kernel IP routing table 
+Destination     Gateway         Genmask         Flags   MSS Window  irtt Iface
+default         _gateway        0.0.0.0         UG        0 0          0 eth0
+192.168.142.0   0.0.0.0         255.255.255.0   U         0 0          0 eth0
+root@KK:~/Documents/system/tftp# 
+
+
+CHECK INTERFACES
+root@k:~# ifconfig -a
+eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+		inet 192.168.1.6  netmask 255.255.255.0  broadcast 192.168.1.255
+		inet6 fe80::20c:29ff:fec0:1c5c  prefixlen 64  scopeid 0x20<link>
+		ether 00:0c:29:c0:1c:5c  txqueuelen 1000  (Ethernet)
+		RX packets 338343  bytes 406932356 (388.0 MiB)
+		RX errors 0  dropped 0  overruns 0  frame 0
+		TX packets 202692  bytes 34903481 (33.2 MiB)
+		TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+		inet 127.0.0.1  netmask 255.0.0.0
+		inet6 ::1  prefixlen 128  scopeid 0x10<host>
+		loop  txqueuelen 1000  (Local Loopback)
+		RX packets 197399  bytes 70872692 (67.5 MiB)
+		RX errors 0  dropped 0  overruns 0  frame 0
+		TX packets 197399  bytes 70872692 (67.5 MiB)
+		TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+root@k:~# 
+
+

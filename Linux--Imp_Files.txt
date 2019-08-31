@@ -1,0 +1,22 @@
+IMP_FILES
+Imp Files
+
+
+/etc/rc.sysinit/ - Single user mode startup scripts
+/etc/rc.1/ - Maintenance runlevel startup scripts (not the same thing as single user mode)
+/dev/fd - A symlink to the /proc structure.
+/etc/sysconfig/selinux - SELinux settings.
+/etc/sysconfig/network - Hostname is defined here.
+/etc/sysconfig/networking-scripts/ifcfg-eth0 - Interface specific networking settings.
+/etc/nsswitch.conf - Controls the order of host resolution sources.
+/proc/partitions - Show live running disk info.
+/etc/exports - NFS mount points.
+/etc/fstab - Disk mount points.
+/proc/cmdline - Shows the boot time arguments used for the running kernel.
+/proc/<pid>/ - Shows information about a running process, including command line args and environment variables at runtime.
+/etc/sysctl.conf - Kernel operating parameters.
+/etc/sysconfig/iptables - Shows the iptables rules which are loaded at boot.
+/etc/iscsi/iscsid.conf - iSCSI bootup configuration.
+/home/<user>/.sqlite_history - May contain sensitive info previously entered in to a SQLite database.
+
+
